@@ -1,5 +1,5 @@
-import { DEFAULT_KEY_PREFIX } from '../storage'
-import { getParamStrFromObj } from '../utils'
+import { DEFAULT_KEY_PREFIX } from '../src/storage'
+import { getParamStrFromObj } from '../src/utils'
 
 export const expireTime = 3
 

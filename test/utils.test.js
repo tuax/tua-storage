@@ -1,4 +1,4 @@
-import { negate, getParamStrFromObj } from '../utils'
+import { negate, getParamStrFromObj } from '../src/utils'
 
 test('[utils]: negate', () => {
     const isEven = n => n % 2 === 0

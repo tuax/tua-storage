@@ -4,7 +4,7 @@
     "description": "A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
     "main": "dist/storage.js",
     "scripts": {
-        "tdd": "jest src/** --watch",
+        "tdd": "jest --watch --silent",
         "test": "jest --no-cache",
         "coverage": "open coverage/lcov-report/index.html",
         "prebuild": "npm run test",
@@ -12,13 +12,14 @@
         "pub": "npm run build && tnpm publish"
     },
     "jest": {
+        "clearMocks": true,
         "transform": {
             "^.+\\.js$": "babel-jest"
         },
         "collectCoverage": true,
         "coveragePathIgnorePatterns": [
-            "src/__TEST__/utils.js",
-            "src/__TEST__/wxMock.js"
+            "test/utils.js",
+            "test/wxMock.js"
         ],
         "setupFiles": [
             "jest-localstorage-mock"
