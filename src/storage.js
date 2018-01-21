@@ -26,6 +26,7 @@ export default class Storage {
         defaultExpires = DEFAULT_EXPIRES,
         storageKeyPrefix = DEFAULT_KEY_PREFIX,
     } = {}) {
+        this.taskList = []
         this.whiteList = whiteList
         this.syncFnMap = syncFnMap
         this.storageEngine = storageEngine
@@ -444,22 +445,41 @@ export default class Storage {
         const isCacheDataStr = typeof cacheData === 'string'
         const isNoCacheData = cacheData === null || cacheData === undefined
 
-        const syncResolveFn = () => syncFn(syncParams)
-            // 格式化数据结构
-            .then(data => (data.code == null && data.data == null) ? { data } : data)
-            // 格式化数据类型
-            .then(({ code = 0, data }) => ({ code: +code, data }))
-            .then(({ code, data }) => {
-                if (code !== 0 || !isAutoSave) return { code, data }
+        const syncResolveFn = () => {
+            const getSameKey = ({ key: taskKey }) => taskKey === key
+            const sameTask = this.taskList.find(getSameKey)
+            const finallyRemoveTask = () => {
+                this.taskList = this.taskList
+                    .filter(negate(getSameKey))
+            }
 
-                this.save({
-                    key: key.replace(this.storageKeyPrefix, ''),
-                    data: { code, data },
-                    expires,
-                }).catch(console.warn)
+            if (!sameTask) {
+                const task = syncFn(syncParams)
+                    // 格式化数据结构
+                    .then(data => (data.code == null && data.data == null) ? { data } : data)
+                    // 格式化数据类型
+                    .then(({ code = 0, data }) => ({ code: +code, data }))
+                    .then(({ code, data }) => {
+                        if (code !== 0 || !isAutoSave) return { code, data }
 
-                return { code, data }
-            })
+                        this.save({
+                            key: key.replace(this.storageKeyPrefix, ''),
+                            data: { code, data },
+                            expires,
+                        }).catch(console.warn)
+
+                        finallyRemoveTask()
+
+                        return { code, data }
+                    })
+                    .catch(finallyRemoveTask)
+
+                this.taskList.push({ key, task })
+                return task
+            }
+
+            return sameTask.task
+        }
 
         const syncRejectFn = () => Promise.reject(
             new Error(JSON.stringify({ key, syncFn }))

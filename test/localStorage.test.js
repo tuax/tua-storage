@@ -18,6 +18,42 @@ describe('load', () => {
         localStorage.__STORE__ = {}
     })
 
+    test('concurrent load one inexistent item with syncFn', () => {
+        const data = '1217'
+        const itemTobeLoaded = {
+            key: 'item key to be loaded with syncFn',
+            syncFn: () => Promise.resolve({ data }),
+        }
+        const targetKey = getTargetKey(itemTobeLoaded.key)
+
+        return Promise.all([
+            tuaStorage.load(itemTobeLoaded),
+            tuaStorage.load(itemTobeLoaded),
+            tuaStorage.load(itemTobeLoaded),
+        ]).then((loadedItems) => {
+            const cache = tuaStorage._cache
+            const store = localStorage.__STORE__
+
+            loadedItems.map(({ code, data: loadedData }) => {
+                expect(code).toBe(0)
+                expect(loadedData).toBe(data)
+            })
+
+            const expectedVal = getExpectedValBySyncFn(data)
+
+            // cache
+            expect(getObjLen(cache)).toBe(1)
+            expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+
+            // storage
+            expect(getObjLen(store)).toBe(1)
+            expect(store[targetKey]).toBe(expectedVal)
+            expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
+
+            expect(localStorage.setItem).toHaveBeenCalledTimes(1)
+        })
+    })
+
     test('load one exist expired item with syncFn', () => {
         const key = 'item to be loaded with syncFn'
         const data = 'item from syncFn'
