@@ -16,27 +16,36 @@ const tuaStorage = new Storage({
     defaultExpires: expireTime,
 })
 
-describe('load', () => {
-    test('reject when no data found and no sync fn', () => {
-        const key = 'rejected by no data and no sync fn'
-        const dataArr = [
-            {
-                key: 'item key to be loaded with syncFn',
-                syncFn: () => Promise.resolve({ data: '+2h' })
-            },
-            { key },
-        ]
-        const targetKey = getTargetKey(key)
-
-        return expect(tuaStorage.load(dataArr))
-            .rejects.toThrow(JSON.stringify({ key: targetKey }))
-    })
-})
-
-describe('remove', () => {
+describe('save/load/remove', () => {
     beforeEach(() => {
         tuaStorage._cache = {}
         AsyncStorage.clear()
+    })
+
+    test('load one exist item without cache', () => {
+        const key = 'item to be loaded without cache'
+        const data = 'item from AsyncStorage'
+
+        return tuaStorage
+            .save({ key, data })
+            .then(() => tuaStorage.load({ key, isEnableCache: false }))
+            .then((loadedData) => {
+                // load function returns rawData
+                expect(loadedData).toBe(data)
+
+                const cache = tuaStorage._cache
+                const store = AsyncStorage.getStore()
+                const targetKey = getTargetKey(key)
+                const expectedVal = getExpectedVal(data)
+
+                // cache
+                expect(getObjLen(cache)).toBe(1)
+                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+
+                // storage
+                expect(store.size).toBe(1)
+                expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
+            })
     })
 
     test('remove some undefined items', () => {

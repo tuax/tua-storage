@@ -14,9 +14,13 @@
 
 import { negate, getParamStrFromObj } from './utils'
 
+export const ERROR_MSG = {
+    KEY: '请输入参数 key 或 fullKey!',
+    PROMISE: 'syncFn 请返回 Promise!',
+}
+
 export const DEFAULT_EXPIRES = 30 // 默认 30s，采用秒作为单位方便测试
 export const DEFAULT_KEY_PREFIX = 'TUA_STORAGE_PREFIX: '
-export const MSG_KEY = '请输入参数 key!'
 
 export default class Storage {
     constructor ({
@@ -85,23 +89,31 @@ export default class Storage {
 
     /* -- 各种私有方法 -- */
 
+    _getQueryKeyStr ({ prefix, syncParams }) {
+        return this.storageKeyPrefix + (Object.keys(syncParams).length === 0
+            ? prefix
+            : `${prefix}?${getParamStrFromObj(syncParams)}`
+        )
+    }
+
     _saveOneItem ({
         key: prefix = '',
         data: rawData,
         expires = this.defaultExpires,
+        fullKey = '',
         syncParams = {},
         isEnableCache = true,
     }) {
-        if (prefix === '') return Promise.reject(MSG_KEY)
+        if (prefix === '' && fullKey === '') return Promise.reject(ERROR_MSG.KEY)
 
-        const key = this.storageKeyPrefix + (Object.keys(syncParams).length === 0
-            ? prefix
-            : `${prefix}?${getParamStrFromObj(syncParams)}`
-        )
+        const key = fullKey || this._getQueryKeyStr({ prefix, syncParams })
 
         const dataToSave = {
             rawData,
-            expires: parseInt(Date.now() / 1000) + expires,
+            expires: expires === null
+                // 永不超时
+                ? null
+                : parseInt(Date.now() / 1000) + expires,
         }
 
         if (isEnableCache) {
@@ -115,31 +127,33 @@ export default class Storage {
         key: prefix = '',
         syncFn = this.syncFnMap[prefix],
         expires = this.defaultExpires,
+        fullKey = '',
         syncParams = {},
         isAutoSave = true,
         isEnableCache = true,
     }) {
-        if (prefix === '') return Promise.reject(MSG_KEY)
+        if (prefix === '' && fullKey === '') return Promise.reject(ERROR_MSG.KEY)
 
-        const key = this.storageKeyPrefix + (Object.keys(syncParams).length === 0
-            ? prefix
-            : `${prefix}?${getParamStrFromObj(syncParams)}`
-        )
+        const key = fullKey || this._getQueryKeyStr({ prefix, syncParams })
 
         return this._findData({ key, syncFn, expires, syncParams, isAutoSave, isEnableCache })
     }
 
     /**
      * 删除单条数据
-     * @param {String} key
+     * @param {String|Object} prefix
      */
-    _removeOneItem (key = '') {
-        if (key === '') return Promise.reject(MSG_KEY)
+    _removeOneItem (prefix = '') {
+        const fullKey = typeof prefix === 'object' ? prefix.fullKey : ''
 
-        delete this._cache[this.storageKeyPrefix + key]
+        if (prefix === '' && fullKey === '') return Promise.reject(ERROR_MSG.KEY)
+
+        const key = fullKey || this.storageKeyPrefix + prefix
+
+        delete this._cache[key]
 
         return this.SEMap
-            ? this.SEMap._removeItem(this.storageKeyPrefix + key)
+            ? this.SEMap._removeItem(key)
             : Promise.resolve()
     }
 
@@ -454,7 +468,12 @@ export default class Storage {
             }
 
             if (!sameTask) {
-                const task = syncFn(syncParams)
+                const originTask = syncFn(syncParams)
+                const isPromise = !!(originTask && originTask.then)
+
+                if (!isPromise) return Promise.reject(ERROR_MSG.PROMISE)
+
+                const task = originTask
                     // 格式化数据结构
                     .then(data => (data.code == null && data.data == null) ? { data } : data)
                     // 格式化数据类型
@@ -475,6 +494,7 @@ export default class Storage {
                     .catch(finallyRemoveTask)
 
                 this.taskList.push({ key, task })
+
                 return task
             }
 
@@ -494,7 +514,10 @@ export default class Storage {
         cacheData = isCacheDataStr ? JSON.parse(cacheData) : cacheData
 
         const { expires: cacheExpires, rawData } = cacheData
-        const isDataFresh = cacheExpires >= parseInt(Date.now() / 1000)
+        const isDataFresh = cacheExpires === null
+            // 永不超时
+            ? true
+            : cacheExpires >= parseInt(Date.now() / 1000)
 
         return isDataFresh
             ? Promise.resolve(rawData)
