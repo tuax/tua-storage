@@ -1,10 +1,10 @@
 {
     "name": "tua-storage",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
     "main": "dist/storage.js",
     "scripts": {
-        "tdd": "jest --watch --silent",
+        "tdd": "jest --watch",
         "test": "jest --no-cache",
         "coverage": "open coverage/lcov-report/index.html",
         "prebuild": "npm run test",

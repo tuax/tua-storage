@@ -16,7 +16,7 @@ const tuaStorage = new Storage({
     defaultExpires: expireTime,
 })
 
-describe('load', () => {
+describe('save/load/clear/remove', () => {
     beforeEach(() => {
         tuaStorage._cache = {}
         wx._clear()
@@ -55,49 +55,6 @@ describe('load', () => {
             })
     })
 
-    test('load one inexistent item with syncFn and non-zero code', () => {
-        const data = 'item from wx'
-        const dataArr = [
-            {
-                key: 'item key1 to be loaded with syncFn and non-zero code',
-                syncFn: () => Promise.resolve({ code: 66, data }),
-            },
-            {
-                key: 'item key2 to be loaded with syncFn and non-zero code',
-                syncFn: () => Promise.resolve({ code: 66, data }),
-            },
-        ]
-
-        return tuaStorage
-            .load(dataArr)
-            .then((loadedItems) => {
-                const cache = tuaStorage._cache
-                const store = wx.store
-
-                loadedItems.map(({ code, data: loadedData }, idx) => {
-                    expect(code).toBe(66)
-                    expect(loadedData).toBe(data)
-
-                    const targetKey = getTargetKey(dataArr[idx].key)
-
-                    // cache
-                    expect(getObjLen(cache)).toBe(0)
-                    expect(JSON.stringify(cache[targetKey])).toBeUndefined()
-
-                    // storage
-                    expect(wx._length).toBe(0)
-                    expect(JSON.stringify(store[targetKey])).toBeUndefined()
-                })
-            })
-    })
-})
-
-describe('remove', () => {
-    beforeEach(() => {
-        tuaStorage._cache = {}
-        wx._clear()
-    })
-
     test('remove some undefined items', () => {
         const key = 'key to be saved'
         const data = 'item to be removed'
@@ -119,44 +76,6 @@ describe('remove', () => {
                 // storage
                 expect(wx._length).toBe(1)
                 expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
-            })
-    })
-})
-
-describe('clear', () => {
-    beforeEach(() => {
-        tuaStorage._cache = {}
-        wx._clear()
-    })
-
-    test('clear all items', () => {
-        const kdArr = [
-            { key: 'cmm-1', data: 'string' },
-            { key: 'cmm-2', data: 1217 },
-            { key: 'cmm-3', data: null },
-            { key: 'cmm-4', data: undefined },
-            { key: 'cmm-5', data: { yo: 1, hey: { 876: 123 } } },
-        ]
-
-        return Promise
-            .all(kdArr.map(({ key, data }) => tuaStorage.save({ key, data })))
-            .then(() => tuaStorage.clear())
-            .then(() => {
-                const cache = tuaStorage._cache
-                const store = wx.store
-
-                kdArr.map(({ key, data }) => {
-                    const targetKey = getTargetKey(key)
-                    const expectedVal = getExpectedVal(data)
-
-                    // cache
-                    expect(getObjLen(cache)).toBe(0)
-                    expect(cache[targetKey]).toBeUndefined()
-
-                    // storage
-                    expect(wx._length).toBe(0)
-                    expect(JSON.stringify(store[targetKey])).toBeUndefined()
-                })
             })
     })
 

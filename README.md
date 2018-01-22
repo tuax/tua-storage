@@ -185,3 +185,67 @@ tuaStorage.remove([
     'item key3 for remove',
 ])
 ```
+
+### 1.4.保存数据永不超时
+设置 expires 为 null 则缓存永不过期。
+
+```js
+tuaStorage.save({
+    key: 'item never expired',
+    data: 'some data',
+    expires: null, // 永不过期
+})
+```
+
+### 1.5.不使用前缀
+保存数据时使用 fullKey，则不自动添加前缀，且可以直接通过 fullKey 读取数据。
+
+```js
+tuaStorage.save({
+    fullKey: 'this is the fullKey',
+    data: 'some data',
+})
+
+tuaStorage.load({
+    fullKey: 'this is the fullKey',
+})
+
+// 为了兼容之前直接调用的方式，采用传递对象的方法
+tuaStorage.remove({
+    fullKey: 'this is the fullKey',
+})
+```
+
+### 1.6.并发相同请求只请求一次
+同时读取同一个不存在的数据，只调用一次同步函数。
+
+```js
+tuaStorage.load({
+    key: 'this is the key',
+    syncParams: {
+        ParamOne: 'one',
+        ParamTwo: 'two',
+    },
+    syncFn: () => {
+        console.log(1)
+        return Promise.resolve('returned data')
+    },
+})
+
+// 连续调用相同的请求，则共用第一个 syncFn（即只有第一个 syncFn 会被调用）
+tuaStorage.load({
+    key: 'this is the key',
+    syncParams: {
+        ParamOne: 'one',
+        ParamTwo: 'two',
+    },
+    syncFn: () => {
+        console.log(2)
+        return Promise.resolve('returned data')
+    },
+})
+
+// 1
+```
+
+## 2.TODO

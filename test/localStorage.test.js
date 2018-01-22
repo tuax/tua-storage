@@ -12,61 +12,53 @@ const tuaStorage = new Storage({
     defaultExpires: expireTime,
 })
 
-describe('load', () => {
+describe('advanced features', () => {
     beforeEach(() => {
         tuaStorage._cache = {}
         localStorage.__STORE__ = {}
     })
 
-    test('load one exist expired item with syncFn', () => {
-        const key = 'item to be loaded with syncFn'
-        const data = 'item from syncFn'
-        const syncParams = { a: 1, b: '2' }
+    test('feat[1.6]: concurrent load one inexistent item with syncFn', () => {
+        const data = '1217'
+        const itemTobeLoaded = {
+            key: 'item key to be loaded with syncFn',
+            syncFn: () => Promise.resolve({ data }),
+        }
+        const targetKey = getTargetKey(itemTobeLoaded.key)
 
-        return tuaStorage
-            .save({ key, data, syncParams, expires: 0 })
-            .then(() => new Promise((resolve) => setTimeout(() =>
-                resolve(tuaStorage.load({
-                    key,
-                    syncParams,
-                    syncFn: () => Promise.resolve(data)
-                })),
-                1000
-            )))
-            .then((loadedData) => {
-                const cache = tuaStorage._cache
-                const store = localStorage.__STORE__
-                const targetKey = getTargetKey(key, syncParams)
-                const expectedVal = getExpectedValBySyncFn(data)
-                const { rawData: { data: storeData } } = JSON.parse(store[targetKey])
+        return Promise.all([
+            tuaStorage.load(itemTobeLoaded),
+            tuaStorage.load(itemTobeLoaded),
+            tuaStorage.load(itemTobeLoaded),
+        ]).then((loadedItems) => {
+            const cache = tuaStorage._cache
+            const store = localStorage.__STORE__
 
-                expect(loadedData.data).toBe(data)
-
-                // cache
-                expect(getObjLen(cache)).toBe(1)
-                expect(cache[targetKey].rawData.data).toBe(data)
-
-                // storage
-                expect(storeData).toBe(data)
-                expect(getObjLen(store)).toBe(1)
+            loadedItems.map(({ code, data: loadedData }) => {
+                expect(code).toBe(0)
+                expect(loadedData).toBe(data)
             })
+
+            const expectedVal = getExpectedValBySyncFn(data)
+
+            // cache
+            expect(getObjLen(cache)).toBe(1)
+            expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+
+            // storage
+            expect(getObjLen(store)).toBe(1)
+            expect(store[targetKey]).toBe(expectedVal)
+            expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
+
+            expect(localStorage.setItem).toHaveBeenCalledTimes(1)
+        })
     })
+})
 
-    test('load one exist expired item without syncFn', () => {
-        const key = 'item to be loaded without syncFn'
-        const data = 'item from without syncFn'
-        const syncParams = { a: 1, b: '2' }
-        const targetKey = getTargetKey(key, syncParams)
-
-        const loadExpiredItemWithoutSyncFn = tuaStorage
-            .save({ key, data, syncParams, expires: 0 })
-            .then(() => new Promise((resolve) => setTimeout(() =>
-                resolve(tuaStorage.load({ key, syncParams })),
-                1000
-            )))
-
-        return expect(loadExpiredItemWithoutSyncFn)
-            .rejects.toThrow(JSON.stringify({ key: targetKey }))
+describe('save/load/clear/remove', () => {
+    beforeEach(() => {
+        tuaStorage._cache = {}
+        localStorage.__STORE__ = {}
     })
 
     test('load some exist items with one key and disable cache', () => {
@@ -102,13 +94,6 @@ describe('load', () => {
                 })
             })
     })
-})
-
-describe('remove', () => {
-    beforeEach(() => {
-        tuaStorage._cache = {}
-        localStorage.__STORE__ = {}
-    })
 
     test('remove some undefined items', () => {
         const key = 'key to be saved'
@@ -136,13 +121,6 @@ describe('remove', () => {
                     expect(localStorage.removeItem).toBeCalledWith(getTargetKey(key))
                 )
             })
-    })
-})
-
-describe('clear', () => {
-    beforeEach(() => {
-        tuaStorage._cache = {}
-        localStorage.__STORE__ = {}
     })
 
     test('clear some items by whiteList', () => {
