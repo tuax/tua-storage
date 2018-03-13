@@ -1,9 +1,19 @@
 {
-    "presets": [
-        ["env", {
-            "targets": {
-                "node": "current"
-            }
-        }]
-    ]
+    "env": {
+        "test": {
+            "presets": [
+                [ "env", { "targets": { "node": "current" } }]
+            ],
+            "plugins": ["transform-decorators-legacy"]
+        },
+        "prod": {
+            "presets": [
+                [ "env", { "modules": false } ]
+            ],
+            "plugins": [
+                "transform-decorators-legacy",
+                "transform-object-rest-spread"
+            ]
+        }
+    }
 }

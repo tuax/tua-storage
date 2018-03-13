@@ -19,7 +19,7 @@
 * Node.js 场景：直接使用内存作为缓存（其实就是使用 object）
 * React-Native 场景：使用 AsyncStorage 作为缓存
 
-### 1.1.初始化
+## 2.初始化
 建议在全局变量上挂载 TuaStorage 的实例
 
 ```js
@@ -51,7 +51,9 @@ window.tuaStorage = window.tuaStorage || new TuaStorage({
 global.tuaStorage = global.tuaStorage || new TuaStorage({ ... })
 ```
 
-### 1.2.保存、读取、删除、清除
+> 注意：实例化后，默认会调用 `clear` 方法，清除不在白名单中、或 key 中不包含前缀的数据。
+
+## 3.保存、读取、删除、清除
 1.保存数据
 
 ```js
@@ -110,7 +112,7 @@ tuaStorage.remove('item key for remove')
 tuaStorage.clear(['item key for reserve', 'important data'])
 ```
 
-### 1.3.批量保存、批量读取、批量删除
+## 4.批量保存、批量读取、批量删除
 1.批量保存数据
 
 ```js
@@ -164,14 +166,8 @@ tuaStorage.load([
         // 是否优先使用内存中的缓存，默认为 true
         isEnableCache: true,
     },
-    {
-        key: 'item key2 for load',
-        data: 1217,
-    },
-    {
-        key: 'item key3 for load',
-        data: 0102,
-    },
+    { key: 'item key2 for load' },
+    { key: 'item key3 for load' },
 ])
 ```
 
@@ -186,7 +182,7 @@ tuaStorage.remove([
 ])
 ```
 
-### 1.4.保存数据永不超时
+## 5.保存数据永不超时
 设置 expires 为 null 则缓存永不过期。
 
 ```js
@@ -197,7 +193,7 @@ tuaStorage.save({
 })
 ```
 
-### 1.5.不使用前缀
+## 6.不使用前缀
 保存数据时使用 fullKey，则不自动添加前缀，且可以直接通过 fullKey 读取数据。
 
 ```js
@@ -216,7 +212,7 @@ tuaStorage.remove({
 })
 ```
 
-### 1.6.并发相同请求只请求一次
+## 7.并发相同请求只请求一次
 同时读取同一个不存在的数据，只调用一次同步函数。
 
 ```js
@@ -227,12 +223,13 @@ tuaStorage.load({
         ParamTwo: 'two',
     },
     syncFn: () => {
-        console.log(1)
+        console.log(1) // 会被调用
         return Promise.resolve('returned data')
     },
 })
 
-// 连续调用相同的请求，则共用第一个 syncFn（即只有第一个 syncFn 会被调用）
+// 连续调用相同的请求，则共用第一个 syncFn
+// （即只有第一个 syncFn 会被调用）
 tuaStorage.load({
     key: 'this is the key',
     syncParams: {
@@ -240,7 +237,7 @@ tuaStorage.load({
         ParamTwo: 'two',
     },
     syncFn: () => {
-        console.log(2)
+        console.log(2) // 不会被调用
         return Promise.resolve('returned data')
     },
 })
@@ -248,4 +245,10 @@ tuaStorage.load({
 // 1
 ```
 
-## 2.TODO
+## 8.过期数据的清理
+### 8.1.保存数据时若 `expires <= 0` 则不缓存数据
+
+### 8.2.启动时遍历缓存，清除过期数据
+
+## TODO
+### 8.3.启动时开启轮询扫描过期数据逻辑

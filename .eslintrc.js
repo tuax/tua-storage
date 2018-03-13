@@ -1,5 +1,6 @@
 module.exports = {
     "extends": "standard",
+    "parser": "babel-eslint",
     "rules": {
         "indent": [2, 4],
         "promise/param-names": 0,
