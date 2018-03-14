@@ -1,4 +1,5 @@
-import buble from 'rollup-plugin-buble'
+import json from 'rollup-plugin-json'
+import babel from 'rollup-plugin-babel'
 import eslint from 'rollup-plugin-eslint'
 import uglify from 'rollup-plugin-uglify'
 
@@ -12,9 +13,8 @@ export default {
     },
     plugins: [
         eslint(),
-        buble({
-            objectAssign: 'Object.assign',
-        }),
+        json(),
+        babel(),
         uglify(),
     ]
 }

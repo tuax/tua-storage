@@ -1,6 +1,6 @@
-import { negate, getParamStrFromObj } from '../src/utils'
+import { negate, jsonParse, getParamStrFromObj } from '../src/utils'
 
-test('[utils]: negate', () => {
+test('negate', () => {
     const isEven = n => n % 2 === 0
     const isOdd = negate(isEven)
 
@@ -10,7 +10,18 @@ test('[utils]: negate', () => {
     expect(isOdd(201)).toBe(true)
 })
 
-test('[utils]: getParamStrFromObj', () => {
+test('jsonParse', () => {
+    const obj = { steve: 'young' }
+    const str = JSON.stringify(obj)
+
+    expect(jsonParse()).toBe(undefined)
+    expect(jsonParse(null)).toBe(null)
+    expect(jsonParse(undefined)).toBe(undefined)
+    expect(jsonParse({})).toEqual({})
+    expect(jsonParse(str)).toEqual(obj)
+})
+
+test('getParamStrFromObj', () => {
     expect(getParamStrFromObj()).toBe('')
     expect(getParamStrFromObj({})).toBe('')
     expect(getParamStrFromObj({ a: 1, b: 2 })).toBe('a=1&b=2')

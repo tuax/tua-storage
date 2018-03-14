@@ -2,12 +2,13 @@ import wxCls from './wxMock'
 
 import Storage from '../src/storage'
 import {
+    TIME_OUT,
     getObjLen,
     expireTime,
     getTargetKey,
     getExpectedVal,
-    getExpectedValBySyncFn,
 } from './utils'
+import { DEFAULT_KEY_PREFIX } from '../src/utils'
 
 const wx = new wxCls()
 
@@ -16,33 +17,138 @@ const tuaStorage = new Storage({
     defaultExpires: expireTime,
 })
 
-describe('save/load/clear/remove', () => {
-    beforeEach(() => {
-        tuaStorage._cache = {}
+const key = 'common key'
+const data = 'common data'
+const fullKey = 'common fullKey'
+const syncParams = { a: 1, b: '2' }
+
+const targetKey = getTargetKey(key, syncParams)
+
+let cache = tuaStorage._cache
+let store = wx.store
+
+describe('timers', () => {
+    jest.useFakeTimers()
+
+    // 专门用于测试时间相关的实例
+    const tuaStorage = new Storage({
+        storageEngine: localStorage,
+    })
+    let cache = tuaStorage._cache
+
+    afterEach(() => {
         wx._clear()
+        cache = tuaStorage._cache = {}
+        store = wx.store
+        Date.now = jest.fn(() => +new Date)
     })
 
+    test('feat[8.3]: setInterval to clean expired data', () => (
+        tuaStorage
+            .save([
+                { key: `${key}1`, data, syncParams, expires: 10 },
+                { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
+                { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
+            ])
+            .then(() => {
+                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT)
+
+                // 因为删除是异步操作
+                setImmediate(() => {
+                    expect(getObjLen(cache)).toBe(2)
+                    expect(wx._length).toBe(2)
+                    expect(cache[getTargetKey(`${key}1`)]).toBeUndefined()
+                })
+            })
+            .then(() => {
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT * 2)
+
+                // 因为删除是异步操作
+                setImmediate(() => {
+                    expect(getObjLen(cache)).toBe(1)
+                    expect(wx._length).toBe(1)
+                })
+            })
+    ))
+})
+
+describe('initial state', () => {
+    afterEach(() => {
+        wx._clear()
+        cache = tuaStorage._cache = {}
+        store = wx.store
+    })
+
+    test('feat[8.2]: clean initial expired data', () => {
+        wx.store = {
+            [`${DEFAULT_KEY_PREFIX}1`]: getExpectedVal(data, -10),
+            [`${DEFAULT_KEY_PREFIX}2`]: JSON.stringify({}),
+            [`${DEFAULT_KEY_PREFIX}3`]: 'abc',
+            [`${DEFAULT_KEY_PREFIX}4`]: getExpectedVal(data, 10),
+        }
+
+
+        return tuaStorage._clearExpiredData()
+            .then(() => {
+                store = wx.store
+
+                expect(wx._length).toBe(3)
+                expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeUndefined()
+            })
+    })
+
+    test('clear items not match prefix', () => {
+        wx.store = {
+            test: '123',
+            steve: '1217',
+            [DEFAULT_KEY_PREFIX]: '666',
+        }
+
+        return tuaStorage.clear(['steve', DEFAULT_KEY_PREFIX])
+            .then(() => {
+                store = wx.store
+
+                expect(wx._length).toBe(2)
+                expect(store['steve']).toBe('1217')
+                expect(store[DEFAULT_KEY_PREFIX]).toBe('666')
+            })
+    })
+})
+
+describe('save/load/clear/remove', () => {
+    afterEach(() => {
+        wx._clear()
+        cache = tuaStorage._cache = {}
+        store = wx.store
+    })
+
+    test('feat[8.1]: never save data which is destined to expired', () => (
+        tuaStorage
+            .save({ key, data, syncParams, expires: 0 })
+            .then(() => {
+                expect(getObjLen(cache)).toBe(0)
+                expect(wx._length).toBe(0)
+            })
+    ))
+
     test('load some exist items with one key and disable cache', () => {
-        const key = 'item to be loaded without cache'
-        const data = 'item from wx'
         const dataArr = [
             { key, data: '+1s', expires: 10, isEnableCache: false },
             { key, data: 1217, isEnableCache: false },
             { key, data, isEnableCache: false },
         ]
+        const targetKey = getTargetKey(key)
+        const expectedVal = getExpectedVal(data)
 
         return tuaStorage
             .save(dataArr)
             .then(() => tuaStorage.load(dataArr))
             .then((loadedItems) => {
-                const cache = tuaStorage._cache
-                const store = wx.store
-
                 loadedItems.map((loadedItem) => {
                     // load function returns rawData
                     expect(loadedItem).toBe(data)
-                    const targetKey = getTargetKey(key)
-                    const expectedVal = getExpectedVal(data)
 
                     // cache
                     expect(getObjLen(cache)).toBe(0)
@@ -56,19 +162,14 @@ describe('save/load/clear/remove', () => {
     })
 
     test('remove some undefined items', () => {
-        const key = 'key to be saved'
-        const data = 'item to be removed'
         const keyArr = ['item key1', 'item key2', 'item key3']
+        const targetKey = getTargetKey(key)
+        const expectedVal = getExpectedVal(data)
 
         return tuaStorage
             .save({ key, data })
             .then(() => tuaStorage.remove(keyArr))
             .then(() => {
-                const cache = tuaStorage._cache
-                const store = wx.store
-                const targetKey = getTargetKey(key)
-                const expectedVal = getExpectedVal(data)
-
                 // cache
                 expect(getObjLen(cache)).toBe(1)
                 expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
@@ -88,18 +189,16 @@ describe('save/load/clear/remove', () => {
             { key: 'cmm-5', data: { yo: 1, hey: { 876: 123 } } },
         ]
         const whiteList = ['3', '4', '5']
+        const expectedVals = kdArr.map(({ data }) => getExpectedVal(data))
 
         return Promise
             .all(kdArr.map(({ key, data }) => tuaStorage.save({ key, data })))
             .then(() => tuaStorage.clear(whiteList))
             .then(() => {
-                const cache = tuaStorage._cache
-                const store = wx.store
-
-                kdArr.map(({ key, data }) => {
-                    const deltaLen = kdArr.length - whiteList.length
+                kdArr.map(({ key, data }, idx) => {
                     const targetKey = getTargetKey(key)
-                    const expectedVal = getExpectedVal(data)
+                    const deltaLen = kdArr.length - whiteList.length
+                    const expectedVal = expectedVals[idx]
                     const isInWhiteList = whiteList
                         .some(targetKey.includes.bind(targetKey))
 

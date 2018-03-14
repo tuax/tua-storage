@@ -1,7 +1,11 @@
-import { DEFAULT_KEY_PREFIX } from '../src/storage'
-import { getParamStrFromObj } from '../src/utils'
+import {
+    getParamStrFromObj,
+    DEFAULT_KEY_PREFIX,
+} from '../src/utils'
 
 export const expireTime = 3
+
+export const TIME_OUT = 999999
 
 export const getObjLen = obj => Object.keys(obj).length
 
