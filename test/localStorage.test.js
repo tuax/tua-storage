@@ -1,6 +1,7 @@
 import Storage, { MSG_KEY } from '../src/storage'
 import { DEFAULT_KEY_PREFIX } from '../src/utils'
 import {
+    TIME_OUT,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -23,10 +24,57 @@ const tuaStorage = new Storage({
 let cache = tuaStorage._cache
 let store = localStorage.__STORE__
 
+describe('timers', () => {
+    jest.useFakeTimers()
+
+    // 专门用于测试时间相关的实例
+    const tuaStorage = new Storage({
+        storageEngine: localStorage,
+    })
+    let cache = tuaStorage._cache
+
+    afterEach(() => {
+        localStorage.clear()
+        cache = tuaStorage._cache = {}
+        store = localStorage.__STORE__
+        Date.now = jest.fn(() => +new Date)
+    })
+
+    test('feat[8.3]: setInterval to clean expired data', () => (
+        tuaStorage
+            .save([
+                { key: `${key}1`, data, syncParams, expires: 10 },
+                { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
+                { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
+            ])
+            .then(() => {
+                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT)
+
+                // 因为删除是异步操作
+                setImmediate(() => {
+                    expect(getObjLen(cache)).toBe(2)
+                    expect(store.size).toBe(2)
+                    expect(cache[getTargetKey(`${key}1`)]).toBeUndefined()
+                })
+            })
+            .then(() => {
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT * 2)
+
+                // 因为删除是异步操作
+                setImmediate(() => {
+                    expect(getObjLen(cache)).toBe(1)
+                    expect(store.size).toBe(1)
+                })
+            })
+    ))
+})
+
 describe('initial state', () => {
     afterEach(() => {
-        cache = tuaStorage._cache = {}
         localStorage.clear()
+        cache = tuaStorage._cache = {}
         store = localStorage.__STORE__
     })
 
@@ -57,12 +105,21 @@ describe('initial state', () => {
     })
 })
 
-describe('advanced features', () => {
+describe('save/load/clear/remove', () => {
     afterEach(() => {
-        cache = tuaStorage._cache = {}
         localStorage.clear()
+        cache = tuaStorage._cache = {}
         store = localStorage.__STORE__
     })
+
+    test('feat[8.1]: never save data which is destined to expired', () => (
+        tuaStorage
+            .save({ key, data, syncParams, expires: 0 })
+            .then(() => {
+                expect(getObjLen(cache)).toBe(0)
+                expect(getObjLen(store)).toBe(0)
+            })
+    ))
 
     test('feat[7]: concurrent load one inexistent item with syncFn', () => {
         const itemTobeLoaded = {
@@ -94,23 +151,6 @@ describe('advanced features', () => {
             expect(localStorage.setItem).toHaveBeenCalledTimes(1)
         })
     })
-})
-
-describe('save/load/clear/remove', () => {
-    afterEach(() => {
-        cache = tuaStorage._cache = {}
-        localStorage.clear()
-        store = localStorage.__STORE__
-    })
-
-    test('feat[8.1]: never save data which is destined to expired', () => (
-        tuaStorage
-            .save({ key, data, syncParams, expires: 0 })
-            .then(() => {
-                expect(getObjLen(cache)).toBe(0)
-                expect(getObjLen(store)).toBe(0)
-            })
-    ))
 
     test('load some exist items with one key and disable cache', () => {
         const dataArr = [

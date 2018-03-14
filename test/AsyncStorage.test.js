@@ -3,6 +3,7 @@ import AsyncStorageCls from 'mock-async-storage'
 import Storage from '../src/storage'
 import { DEFAULT_KEY_PREFIX } from '../src/utils'
 import {
+    TIME_OUT,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -24,6 +25,52 @@ const targetKey = getTargetKey(key)
 const expectedVal = getExpectedVal(data)
 
 let cache = tuaStorage._cache
+
+describe('timers', () => {
+    jest.useFakeTimers()
+
+    // 专门用于测试时间相关的实例
+    let tuaStorage = new Storage({
+        storageEngine: AsyncStorage,
+    })
+    let cache = tuaStorage._cache
+
+    afterEach(() => {
+        AsyncStorage.clear()
+        cache = tuaStorage._cache = {}
+        Date.now = jest.fn(() => +new Date)
+    })
+
+    test('feat[8.3]: setInterval to clean expired data', () => (
+        tuaStorage
+            .save([
+                { key: `${key}1`, data, syncParams, expires: 10 },
+                { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
+                { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
+            ])
+            .then(() => {
+                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT)
+
+                // 因为删除是异步操作
+                setImmediate(() => {
+                    expect(getObjLen(cache)).toBe(2)
+                    expect(store.size).toBe(2)
+                    expect(store.get(getTargetKey(`${key}1`))).toBeUndefined()
+                })
+            })
+            .then(() => {
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT * 2)
+
+                // 因为删除是异步操作
+                setImmediate(() => {
+                    expect(getObjLen(cache)).toBe(1)
+                    expect(store.size).toBe(1)
+                })
+            })
+    ))
+})
 
 describe('initial state', () => {
     afterEach(() => {
@@ -106,6 +153,7 @@ describe('save/load/remove', () => {
     ))
 
     test('remove some undefined items', () => {
+        const expectedVal = getExpectedVal(data)
         const keyArr = ['item key1', 'item key2', 'item key3']
 
         return tuaStorage

@@ -9,13 +9,14 @@
  * @Author: StEve Young
  * @Date:   2017-Dec-06 11:37:27
  * @Last modified by:   steve
- * @Last modified time: 2018-Mar-13 22:31:16
+ * @Last modified time: 2018-Mar-14 22:55:09
  */
 
 import { version } from '../package.json'
 import {
     negate,
     checkKey,
+    jsonParse,
     ERROR_MSG,
     DEFAULT_EXPIRES,
     supportArrayParam,
@@ -33,6 +34,12 @@ Otherwise data would be saved in cache(Memory) and lost after reload...`
 
 console.log(`Tua-Storage Version: ${version}`)
 
+// 缩写常用函数
+const pAll = Promise.all.bind(Promise)
+const pRej = Promise.reject.bind(Promise)
+const pRes = Promise.resolve.bind(Promise)
+const stringify = JSON.stringify.bind(JSON)
+
 export default class Storage {
     constructor ({
         syncFnMap = {},
@@ -49,65 +56,28 @@ export default class Storage {
         this.neverExpireMark = null // 永不超时的标志
         this.storageKeyPrefix = storageKeyPrefix
 
-        const resolveFn = () => Promise.resolve()
-
-        this.SEMap = this._getFormatedSE() || {
-            _clear: resolveFn,
-            _setItem: resolveFn,
-            _getItem: resolveFn,
-            _getAllKeys: () => Promise.resolve([]),
-            _removeItem: resolveFn,
-        }
+        this.SEMap = this._getFormatedSE()
 
         this._cache = Object.create(null)
-        this.clear([this.storageKeyPrefix])
-        this._clearExpiredData()
+
+        const clearExpiredData = this._clearExpiredData.bind(this)
+        // 轮询扫描缓存，清除过期数据
+        setTimeout(clearExpiredData, 0)
+        setInterval(clearExpiredData, 1000 * 60)
     }
 
     /* -- 各种对外暴露方法 -- */
 
     /**
-     * 保存数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {Object|String|Number} items.data 待保存数据
-     * @param {Number} items.expires 超时时间（单位：秒）
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @param {Boolean} items.isEnableCache 是否使用内存缓存
+     * 清除非白名单中的所有缓存数据
+     * @param {Array} whiteList 白名单
      * @return {Promise}
      */
-    @supportArrayParam
-    @checkKey
-    save ({
-        key: prefix = '',
-        data: rawData,
-        expires = this.defaultExpires,
-        fullKey = '',
-        syncParams = {},
-        isEnableCache = true,
-    }) {
-        const isNeverExpired = this._isNeverExpired(expires)
-        const realExpires = isNeverExpired
-            // 永不超时
-            ? this.neverExpireMark
-            : parseInt(Date.now() / 1000) + expires
+    clear (whiteList = []) {
+        // 首先清除缓存
+        this._clearFromCache(whiteList)
 
-        const key = fullKey ||
-            this._getQueryKeyStr({ prefix, syncParams })
-
-        const dataToSave = { rawData, expires: realExpires }
-
-        if (!isNeverExpired && expires <= 0) {
-            // 不保存注定过期的数据
-            return Promise.resolve()
-        }
-
-        if (isEnableCache) {
-            this._cache[key] = dataToSave
-        }
-
-        return this.SEMap._setItem(key, dataToSave)
+        return this.SEMap._clear(whiteList)
     }
 
     /**
@@ -168,43 +138,53 @@ export default class Storage {
     }
 
     /**
-     * 清除非白名单中的所有缓存数据
-     * @param {Array} whiteList 白名单
+     * 保存数据，可传递数组或单对象
+     * @param {Array|Object} items
+     * @param {String} items.key 前缀
+     * @param {Object|String|Number} items.data 待保存数据
+     * @param {Number} items.expires 超时时间（单位：秒）
+     * @param {String} items.fullKey 完整关键词
+     * @param {Object} items.syncParams 同步参数对象
+     * @param {Boolean} items.isEnableCache 是否使用内存缓存
      * @return {Promise}
      */
-    clear (whiteList = []) {
-        // 首先清除缓存
-        this._clearFromCache(whiteList)
+    @supportArrayParam
+    @checkKey
+    save ({
+        key: prefix = '',
+        data: rawData,
+        expires = this.defaultExpires,
+        fullKey = '',
+        syncParams = {},
+        isEnableCache = true,
+    }) {
+        const isNeverExpired = this._isNeverExpired(expires)
+        const realExpires = isNeverExpired
+            // 永不超时
+            ? this.neverExpireMark
+            : parseInt(Date.now() / 1000) + expires
 
-        return this.SEMap._clear(whiteList)
+        const key = fullKey ||
+            this._getQueryKeyStr({ prefix, syncParams })
+
+        const dataToSave = { rawData, expires: realExpires }
+
+        if (!isNeverExpired && expires <= 0) {
+            // 不保存注定过期的数据
+            return pRes()
+        }
+
+        if (isEnableCache) {
+            this._cache[key] = dataToSave
+        }
+
+        return this.SEMap._setItem(key, dataToSave)
     }
 
     /* -- 各种私有方法 -- */
 
     /**
-     * 判断数据是否已过期
-     * @param {Object} item
-     * @param {Number} item.expires 数据的到期时间
-     * @return {Boolean}
-     */
-    _isDataExpired ({ expires = this.neverExpireMark }) {
-        return this._isNeverExpired(expires)
-            // 永不超时
-            ? false
-            : +expires < parseInt(Date.now() / 1000)
-    }
-
-    /**
-     * 判断是否永不超时
-     * @param {Number} expires
-     * @return {Boolean}
-     */
-    _isNeverExpired (expires) {
-        return expires === this.neverExpireMark
-    }
-
-    /**
-     * 清除非白名单中的数据
+     * 清除 cache 中非白名单中的数据
      * @param {Array} whiteList 白名单
      */
     _clearFromCache (whiteList) {
@@ -213,53 +193,248 @@ export default class Storage {
     }
 
     /**
+     * 清除 cache 中已过期的数据
+     */
+    _clearExpiredDataFromCache () {
+        Object.entries(this._cache)
+            .filter(([ _, val ]) => this._isDataExpired(val))
+            .map(([ key ]) => {
+                delete this._cache[key]
+            })
+    }
+
+    /**
      * 清除已过期的数据
      */
     _clearExpiredData () {
         const { _getItem, _getAllKeys, _removeItem } = this.SEMap
 
+        // 清除 cache 中过期数据
+        this._clearExpiredDataFromCache()
+
         return _getAllKeys()
             .then(keys => keys.map(
                 key => _getItem(key)
-                    .then(item => JSON.parse(item))
+                    .then(jsonParse)
+                    // 不处理 JSON.parse 的错误
+                    .catch(() => {})
                     .then(this._isDataExpired.bind(this))
                     .then(isExpired => (
-                        isExpired ? _removeItem(key) : Promise.resolve()
+                        isExpired ? _removeItem(key) : pRes()
                     ))
-                    .catch(console.error)
             ))
-            .then(Promise.all.bind(Promise))
+            .then(pAll)
     }
 
     /**
-     * 根据前缀和同步参数，获取完整请求关键词字符串
-     * @param {String} prefix 前缀
-     * @param {Object} syncParams 同步参数对象
-     * @return {String} 完整请求关键词字符串
+     * 从 cache 中寻找数据，如果没寻找到则读取 storage
+     * @param {Object} item
+     * @param {String} item.key 前缀
+     * @param {Boolean} item.isEnableCache 是否启用 cache
+     * @return {Promise}
      */
-    _getQueryKeyStr ({ prefix, syncParams }) {
-        return this.storageKeyPrefix + (
-            Object.keys(syncParams).length === 0
-                ? prefix
-                : `${prefix}?${getParamStrFromObj(syncParams)}`
+    _findData ({ key, isEnableCache, ...rest }) {
+        const cacheData = this._cache[key]
+
+        return (isEnableCache && cacheData)
+            // 返回 cache 数据
+            ? this._loadData({ key, cacheData, ...rest })
+            // 读取 storage
+            : this.SEMap._getItem(key)
+                // 如果有缓存则返回 cacheData
+                .then(cacheData => this._loadData({ key, cacheData, ...rest }))
+                // 没有缓存则不传 cacheData，执行同步数据逻辑（请求接口等）
+                .catch(() => this._loadData({ key, ...rest }))
+    }
+
+    /**
+     * 统一规范化 AsyncStorage 的各个方法
+     * @return {Object}
+     */
+    _formatMethodsByAS () {
+        const {
+            getItem,
+            setItem,
+            getAllKeys,
+            removeItem,
+            multiRemove,
+        } = this.SE
+
+        const bindFnToSE = fn => fn.bind(this.SE)
+
+        /**
+         * 清除非白名单中的数据
+         * @param {Array} whiteList 白名单
+         * @return {Promise}
+         */
+        const _clear = (whiteList) => (
+            _getAllKeys()
+                .then(this._getKeysByWhiteList(whiteList))
+                .then(bindFnToSE(multiRemove))
+                .catch(console.error)
         )
+        /**
+         * 适配 AsyncStorage 读取数据
+         * @param {String} key
+         * @return {Promise}
+         */
+        const _getItem = bindFnToSE(getItem)
+        /**
+         * 适配 AsyncStorage 保存数据
+         * @param {String} key
+         * @param {String} data
+         * @return {Promise}
+         */
+        const _setItem = bindFnToSE(setItem)
+        /**
+         * 返回 AsyncStorage 中的所有 key
+         * @return {Promise}
+         */
+        const _getAllKeys = bindFnToSE(getAllKeys)
+        /**
+         * 适配 AsyncStorage 删除单条数据
+         * @param {String} key
+         * @return {Promise}
+         */
+        const _removeItem = bindFnToSE(removeItem)
+
+        return { _clear, _getItem, _setItem, _getAllKeys, _removeItem }
     }
 
     /**
-     * 获取过滤白名单后的 keys
-     * @param {Array} whiteList 白名单
-     * @return {Function}
+     * 统一规范化 LocalStorage 的各个方法
+     * @return {Object}
      */
-    _getKeysByWhiteList (whiteList) {
-        const mergedWhiteList = [
-            ...whiteList,
-            ...this.whiteList,
-        ]
+    _formatMethodsByLS () {
+        const {
+            getItem,
+            setItem,
+            removeItem,
+        } = this.SE
 
-        return keys => keys.filter(
-            key => mergedWhiteList
+        const promisify = (fn) => (...args) => pRes(
+            fn.apply(this.SE, args)
+        )
+
+        /**
+         * 清除非白名单中的数据
+         * @param {Array} whiteList 白名单
+         * @return {Promise}
+         */
+        const _clear = (whiteList) => {
+            const mergedWhiteList = [
+                ...whiteList,
+                ...this.whiteList,
+            ]
+            const isNotInWhiteList = key => mergedWhiteList
                 .every(item => !key.includes(item))
+
+            return _getAllKeys()
+                .then(keys => keys.filter(isNotInWhiteList))
+                .then(keys => keys.map(k => _removeItem(k)))
+                .then(pAll)
+                .catch(console.error)
+        }
+        /**
+         * 适配 localStorage 读取数据
+         * @param {String} key
+         * @return {Promise}
+         */
+        const _getItem = promisify(getItem)
+        /**
+         * 适配 localStorage 保存数据
+         * @param {String} key
+         * @param {String} data
+         * @return {Promise}
+         */
+        const _setItem = (key, data) => promisify(setItem)(key, stringify(data))
+        /**
+         * 返回 localStorage 中的所有 key
+         * @return {Array} keys
+         */
+        const _getAllKeys = () => {
+            const { key: keyFn, length } = this.SE
+            const keys = []
+
+            for (let i = 0, len = length; i < len; i++) {
+                const key = keyFn.call(this.SE, i)
+
+                keys.push(key)
+            }
+
+            return pRes(keys)
+        }
+        /**
+         * 适配 localStorage 删除单条数据
+         * @param {String} key
+         * @return {Promise}
+         */
+        const _removeItem = promisify(removeItem)
+
+        return { _clear, _getItem, _setItem, _getAllKeys, _removeItem }
+    }
+
+    /**
+     * 统一规范化小程序的各个方法
+     * @return {Object}
+     */
+    _formatMethodsByWX () {
+        const {
+            getStorage,
+            setStorage,
+            removeStorage,
+            getStorageInfo,
+        } = this.SE
+
+        const promisify = (fn) => (args = {}) => new Promise(
+            (success, fail) => fn.call(
+                this.SE,
+                { fail, success, ...args }
+            )
         )
+
+        const rmFn = promisify(removeStorage)
+        const getFn = promisify(getStorage)
+        const setFn = promisify(setStorage)
+        const infoFn = promisify(getStorageInfo)
+
+        /**
+         * 清除非白名单中的数据
+         * @param {Array} whiteList 白名单
+         * @return {Promise}
+         */
+        const _clear = (whiteList) => (
+            _getAllKeys()
+                .then(this._getKeysByWhiteList(whiteList))
+                .then((keys) => keys.map(_removeItem))
+                .then(pAll)
+        )
+        /**
+         * 适配小程序读取数据
+         * @param {String} key
+         * @return {Promise}
+         */
+        const _getItem = (key) => getFn({ key }).then(({ data }) => data)
+        /**
+         * 适配小程序保存数据
+         * @param {String} key
+         * @param {String} data
+         * @return {Promise}
+         */
+        const _setItem = (key, data) => setFn({ key, data })
+        /**
+         * 适配小程序删除单条数据
+         * @param {String} key
+         * @return {Promise}
+         */
+        const _removeItem = (key) => rmFn({ key })
+        /**
+         * 返回小程序中的所有 key
+         * @return {Promise}
+         */
+        const _getAllKeys = () => infoFn().then(({ keys }) => keys)
+
+        return { _clear, _getItem, _setItem, _getAllKeys, _removeItem }
     }
 
     /**
@@ -267,11 +442,19 @@ export default class Storage {
      * @return {Object | Null}
      */
     _getFormatedSE () {
+        const defaultSEMap = {
+            _clear: pRes,
+            _setItem: pRes,
+            _getItem: pRes,
+            _getAllKeys: () => pRes([]),
+            _removeItem: pRes,
+        }
+
         // 未指定存储引擎
         if (!this.SE) {
             console.warn(SE_ERROR_MSG)
 
-            return null
+            return defaultSEMap
         }
 
         const SEMethods = {
@@ -322,240 +505,39 @@ export default class Storage {
                 ? this._formatMethodsByAS()
                 : this._formatMethodsByLS()
         } catch (e) {
-            return null
+            return defaultSEMap
         }
     }
 
     /**
-     * 统一规范化小程序的各个方法
-     * @return {Object}
+     * 获取过滤白名单后的 keys
+     * @param {Array} whiteList 白名单
+     * @return {Function}
      */
-    _formatMethodsByWX () {
-        const {
-            setStorage,
-            getStorage,
-            removeStorage,
-            getStorageInfo,
-        } = this.SE
+    _getKeysByWhiteList (whiteList) {
+        const mergedWhiteList = [
+            ...whiteList,
+            ...this.whiteList,
+        ]
 
-        const promisifyWxApi = (fn) => (args = {}) => new Promise(
-            (success, fail) => fn.call(
-                this.SE,
-                { fail, success, ...args }
-            )
+        return keys => keys.filter(
+            key => mergedWhiteList
+                .every(item => !key.includes(item))
         )
-
-        const rmPromise = promisifyWxApi(removeStorage)
-        const setPromise = promisifyWxApi(setStorage)
-        const getPromise = promisifyWxApi(getStorage)
-        const infoPromise = promisifyWxApi(getStorageInfo)
-
-        const _setItem = (key, data) => setPromise({ key, data })
-        const _getItem = (key) => getPromise({ key }).then(({ data }) => data)
-        const _removeItem = (key) => rmPromise({ key })
-        const _getAllKeys = () => infoPromise().then(({ keys }) => keys)
-
-        return {
-            /**
-             * 清除非白名单中的数据
-             * @param {Array} whiteList 白名单
-             * @return {Promise}
-             */
-            _clear: (whiteList) => (
-                _getAllKeys()
-                    .then(this._getKeysByWhiteList(whiteList))
-                    .then((keys) => keys.map(_removeItem))
-                    .then(Promise.all.bind(Promise))
-            ),
-            /**
-             * 适配小程序保存数据
-             * @param {String} key
-             * @param {String} data
-             * @return {Promise}
-             */
-            _setItem,
-            /**
-             * 适配小程序读取数据
-             * @param {String} key
-             * @return {Promise}
-             */
-            _getItem,
-            /**
-             * 返回小程序中的所有 key
-             * @return {Promise}
-             */
-            _getAllKeys,
-            /**
-             * 适配小程序删除单条数据
-             * @param {String} key
-             * @return {Promise}
-             */
-            _removeItem,
-        }
     }
 
     /**
-     * 统一规范化 AsyncStorage 的各个方法
-     * @return {Object}
+     * 根据前缀和同步参数，获取完整请求关键词字符串
+     * @param {String} prefix 前缀
+     * @param {Object} syncParams 同步参数对象
+     * @return {String} 完整请求关键词字符串
      */
-    _formatMethodsByAS () {
-        const {
-            setItem,
-            getItem,
-            removeItem,
-            getAllKeys,
-            multiRemove,
-        } = this.SE
-
-        const bindFnToSE = fn => fn.bind(this.SE)
-        const _setItem = bindFnToSE(setItem)
-        const _getItem = bindFnToSE(getItem)
-        const _removeItem = bindFnToSE(removeItem)
-        const _getAllKeys = bindFnToSE(getAllKeys)
-        const _multiRemove = bindFnToSE(multiRemove)
-
-        return {
-            /**
-             * 清除非白名单中的数据
-             * @param {Array} whiteList 白名单
-             * @return {Promise}
-             */
-            _clear: (whiteList) => (
-                _getAllKeys()
-                    .then(this._getKeysByWhiteList(whiteList))
-                    .then(_multiRemove)
-                    .catch(console.error)
-            ),
-            /**
-             * 适配 AsyncStorage 保存数据
-             * @param {String} key
-             * @param {String} data
-             * @return {Promise}
-             */
-            _setItem,
-            /**
-             * 适配 AsyncStorage 读取数据
-             * @param {String} key
-             * @return {Promise}
-             */
-            _getItem,
-            /**
-             * 返回 AsyncStorage 中的所有 key
-             * @return {Promise}
-             */
-            _getAllKeys,
-            /**
-             * 适配 AsyncStorage 删除单条数据
-             * @param {String} key
-             * @return {Promise}
-             */
-            _removeItem,
-        }
-    }
-
-    /**
-     * 统一规范化 LocalStorage 的各个方法
-     * @return {Object}
-     */
-    _formatMethodsByLS () {
-        const {
-            setItem,
-            getItem,
-            removeItem,
-        } = this.SE
-
-        const promisifyByResolve = (fn) => (...args) => Promise.resolve(
-            fn.apply(this.SE, args)
+    _getQueryKeyStr ({ prefix, syncParams }) {
+        return this.storageKeyPrefix + (
+            Object.keys(syncParams).length === 0
+                ? prefix
+                : `${prefix}?${getParamStrFromObj(syncParams)}`
         )
-
-        const _setItem = promisifyByResolve(setItem)
-        const _getItem = promisifyByResolve(getItem)
-        const _removeItem = promisifyByResolve(removeItem)
-
-        const _getAllKeys = () => {
-            const { key: keyFn, length } = this.SE
-            const keys = []
-
-            for (let i = 0, len = length; i < len; i++) {
-                const key = keyFn.call(this.SE, i)
-
-                keys.push(key)
-            }
-
-            return Promise.resolve(keys)
-        }
-
-        return {
-            /**
-             * 清除非白名单中的数据
-             * @param {Array} whiteList 白名单
-             * @return {Promise}
-             */
-            _clear: (whiteList) => {
-                const mergedWhiteList = [
-                    ...whiteList,
-                    ...this.whiteList,
-                ]
-                const filterNotInWhiteList = key => mergedWhiteList
-                    .every(item => !key.includes(item))
-
-                return _getAllKeys()
-                    .then(keys => keys.filter(filterNotInWhiteList))
-                    .then(keys => keys.map(k => _removeItem(k)))
-                    .then(Promise.all.bind(Promise))
-                    .catch(console.error)
-            },
-            /**
-             * 适配 localStorage 保存数据
-             * @param {String} key
-             * @param {String} data
-             * @return {Promise}
-             */
-            _setItem: (key, data) => (
-                _setItem(
-                    key,
-                    JSON.stringify(data)
-                )
-            ),
-            /**
-             * 适配 localStorage 读取数据
-             * @param {String} key
-             * @return {Promise}
-             */
-            _getItem,
-            /**
-             * 返回 localStorage 中的所有 key
-             * @return {Array} keys
-             */
-            _getAllKeys,
-            /**
-             * 适配 localStorage 删除单条数据
-             * @param {String} key
-             * @return {Promise}
-             */
-            _removeItem,
-        }
-    }
-
-    /**
-     * 从 cache 中寻找数据，如果没寻找到则读取 storage
-     * @param {Object} item
-     * @param {String} item.key 前缀
-     * @param {Boolean} item.isEnableCache 是否启用 cache
-     * @return {Promise}
-     */
-    _findData ({ key, isEnableCache, ...rest }) {
-        const cacheData = this._cache[key]
-
-        return (isEnableCache && cacheData)
-            // 返回 cache 数据
-            ? this._loadData({ key, cacheData, ...rest })
-            // 读取 storage
-            : this.SEMap._getItem(key)
-                // 如果有缓存则返回 cacheData
-                .then(cacheData => this._loadData({ key, cacheData, ...rest }))
-                // 没有缓存则不传 cacheData，执行同步数据逻辑（请求接口等）
-                .catch(() => this._loadData({ key, ...rest }))
     }
 
     /**
@@ -581,7 +563,6 @@ export default class Storage {
         isAutoSave,
     }) {
         const isNoCacheData = cacheData === null || cacheData === undefined
-        const isCacheDataStr = typeof cacheData === 'string'
 
         const syncResolveFn = () => {
             const getSameKey = ({ key: taskKey }) => taskKey === key
@@ -597,7 +578,7 @@ export default class Storage {
             const originTask = syncFn(syncParams)
             const isPromise = !!(originTask && originTask.then)
 
-            if (!isPromise) return Promise.reject(ERROR_MSG.PROMISE)
+            if (!isPromise) return pRej(ERROR_MSG.PROMISE)
 
             const task = originTask
                 // 格式化数据结构
@@ -629,9 +610,7 @@ export default class Storage {
             return task
         }
 
-        const syncRejectFn = () => Promise.reject(
-            new Error(JSON.stringify({ key, syncFn }))
-        )
+        const syncRejectFn = () => pRej(new Error(stringify({ key, syncFn })))
 
         // 没有缓存数据，直接调用方法同步数据
         if (isNoCacheData) {
@@ -639,7 +618,7 @@ export default class Storage {
         }
 
         // cacheData 转为对象
-        cacheData = isCacheDataStr ? JSON.parse(cacheData) : cacheData
+        cacheData = jsonParse(cacheData)
 
         const { expires: cacheExpires, rawData } = cacheData
         const isDataExpired = this._isDataExpired({ expires: cacheExpires })
@@ -650,6 +629,33 @@ export default class Storage {
             ? !syncFn
                 ? syncRejectFn()
                 : syncResolveFn()
-            : Promise.resolve(rawData)
+            : pRes(rawData)
+    }
+
+    /**
+     * 判断数据是否已过期
+     * @param {Object} param
+     * @param {Number} param.expires 数据的到期时间
+     * @return {Boolean}
+     */
+    _isDataExpired (param) {
+        // 不处理数据结构不匹配的数据
+        if (!param) return false
+
+        const { expires = this.neverExpireMark } = param
+
+        return this._isNeverExpired(expires)
+            // 永不超时
+            ? false
+            : +expires < parseInt(Date.now() / 1000)
+    }
+
+    /**
+     * 判断是否永不超时
+     * @param {Number} expires
+     * @return {Boolean}
+     */
+    _isNeverExpired (expires) {
+        return expires === this.neverExpireMark
     }
 }

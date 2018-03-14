@@ -5,6 +5,8 @@ import {
 
 export const expireTime = 3
 
+export const TIME_OUT = 999999
+
 export const getObjLen = obj => Object.keys(obj).length
 
 export const getTargetKey = (prefix, syncParams = {}) =>

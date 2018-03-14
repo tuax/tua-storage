@@ -11,6 +11,7 @@
                 [ "env", { "modules": false } ]
             ],
             "plugins": [
+                "external-helpers",
                 "transform-decorators-legacy",
                 "transform-object-rest-spread"
             ]

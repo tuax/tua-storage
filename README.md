@@ -51,8 +51,6 @@ window.tuaStorage = window.tuaStorage || new TuaStorage({
 global.tuaStorage = global.tuaStorage || new TuaStorage({ ... })
 ```
 
-> 注意：实例化后，默认会调用 `clear` 方法，清除不在白名单中、或 key 中不包含前缀的数据。
-
 ## 3.保存、读取、删除、清除
 1.保存数据
 
@@ -198,17 +196,17 @@ tuaStorage.save({
 
 ```js
 tuaStorage.save({
-    fullKey: 'this is the fullKey',
+    fullKey: 'this is fullKey',
     data: 'some data',
 })
 
 tuaStorage.load({
-    fullKey: 'this is the fullKey',
+    fullKey: 'this is fullKey',
 })
 
 // 为了兼容之前直接调用的方式，采用传递对象的方法
 tuaStorage.remove({
-    fullKey: 'this is the fullKey',
+    fullKey: 'this is fullKey',
 })
 ```
 
@@ -217,28 +215,28 @@ tuaStorage.remove({
 
 ```js
 tuaStorage.load({
-    key: 'this is the key',
-    syncParams: {
-        ParamOne: 'one',
-        ParamTwo: 'two',
-    },
+    key: 'this is key',
     syncFn: () => {
         console.log(1) // 会被调用
         return Promise.resolve('returned data')
+    },
+    syncParams: {
+        ParamOne: 'one',
+        ParamTwo: 'two',
     },
 })
 
 // 连续调用相同的请求，则共用第一个 syncFn
 // （即只有第一个 syncFn 会被调用）
 tuaStorage.load({
-    key: 'this is the key',
-    syncParams: {
-        ParamOne: 'one',
-        ParamTwo: 'two',
-    },
+    key: 'this is key',
     syncFn: () => {
         console.log(2) // 不会被调用
         return Promise.resolve('returned data')
+    },
+    syncParams: {
+        ParamOne: 'one',
+        ParamTwo: 'two',
     },
 })
 
@@ -250,5 +248,6 @@ tuaStorage.load({
 
 ### 8.2.启动时遍历缓存，清除过期数据
 
+### 8.3.启动时开启轮询清除过期数据
+
 ## TODO
-### 8.3.启动时开启轮询扫描过期数据逻辑

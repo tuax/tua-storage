@@ -1,3 +1,5 @@
+/* -- 各种常量 -- */
+
 export const ERROR_MSG = {
     KEY: '请输入参数 key 或 fullKey!',
     PROMISE: 'syncFn 请返回 Promise!',
@@ -6,37 +8,33 @@ export const ERROR_MSG = {
 export const DEFAULT_EXPIRES = 30 // 默认 30s，采用秒作为单位方便测试
 export const DEFAULT_KEY_PREFIX = 'TUA_STORAGE_PREFIX: '
 
-// 该函数用于将谓词函数取反，以便用于各种高阶函数中
-// negate :: Function -> a -> Boolean
-export const negate = (fn) => (...args) => !fn(...args)
+/* -- 各种辅助函数 -- */
 
 /**
  * 将对象序列化为 queryString 的形式
  * @param {Object} data
  * @returns {String}
  */
-export const getParamStrFromObj = (data = {}) => Object.keys(data)
-    .map(key => `${key}=${encodeURIComponent(data[key])}`).join('&')
+export const getParamStrFromObj = (data = {}) => (
+    Object.entries(data)
+        .map(([ key, val ]) => `${key}=${encodeURIComponent(val)}`)
+        .join('&')
+)
+
+// 该函数用于将谓词函数取反，以便用于各种高阶函数中
+// negate :: Function -> a -> Boolean
+export const negate = (fn) => (...args) => !fn(...args)
 
 /**
- * 让函数支持数组参数的装饰器（原函数返回 Promise）
+ * 若参数为字符串则调用 JSON.parse 进行转换
+ * @param {Object|String} data
+ * @returns {Object}
  */
-export const supportArrayParam = (_, __, descriptor) => {
-    const method = descriptor.value
+export const jsonParse = (data) => (
+    typeof data === 'string' ? JSON.parse(data) : data
+)
 
-    /**
-     * 使得原函数支持数组参数
-     * @param {Array|Any} items 待处理的数据，可能是数组
-     * @return {Promise}
-     */
-    descriptor.value = function (items) {
-        return Array.isArray(items)
-            ? Promise.all(items.map(item => method.call(this, item)))
-            : method.call(this, items)
-    }
-
-    return descriptor
-}
+/* -- 各种装饰器 -- */
 
 /**
  * 帮函数检查 key 相关参数的装饰器（必需有 key 或 fullKey）
@@ -56,6 +54,26 @@ export const checkKey = (_, __, descriptor) => {
         }
 
         return method.call(this, params)
+    }
+
+    return descriptor
+}
+
+/**
+ * 让函数支持数组参数的装饰器（原函数返回 Promise）
+ */
+export const supportArrayParam = (_, __, descriptor) => {
+    const method = descriptor.value
+
+    /**
+     * 使得原函数支持数组参数
+     * @param {Array|Any} items 待处理的数据，可能是数组
+     * @return {Promise}
+     */
+    descriptor.value = function (items) {
+        return Array.isArray(items)
+            ? Promise.all(items.map(item => method.call(this, item)))
+            : method.call(this, items)
     }
 
     return descriptor

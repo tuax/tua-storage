@@ -1,6 +1,7 @@
 import Storage from '../src/storage'
 import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/utils'
 import {
+    TIME_OUT,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -8,12 +9,7 @@ import {
     getExpectedValBySyncFn
 } from './utils'
 
-const TIME_OUT = 999999
-
 const tuaStorage = new Storage()
-
-// 为了测试 api 不全部分的代码
-new Storage({ storageEngine: {} })
 
 const key = 'common key'
 const data = 'common data'
@@ -26,19 +22,37 @@ const expectedVal = getExpectedVal(data, DEFAULT_EXPIRES)
 
 let cache = tuaStorage._cache
 
-describe('expires', () => {
+describe('timers', () => {
     jest.useFakeTimers()
+
+    // 专门用于测试时间相关的实例
+    const tuaStorage = new Storage({ storageEngine: {} })
+    let cache = tuaStorage._cache
 
     afterEach(() => {
         cache = tuaStorage._cache = {}
         Date.now = jest.fn(() => +new Date)
     })
 
-    test('feat[8.1]: never save data which is destined to expired', () => (
+    test('feat[8.3]: setInterval to clean expired data', () => (
         tuaStorage
-            .save({ key, data, syncParams, expires: 0 })
+            .save([
+                { key: `${key}1`, data, syncParams, expires: 10 },
+                { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
+                { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
+            ])
             .then(() => {
-                expect(getObjLen(cache)).toBe(0)
+                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT)
+
+                // 清除内存中的数据是同步操作
+                expect(getObjLen(cache)).toBe(2)
+                expect(cache[getTargetKey(`${key}1`)]).toBeUndefined()
+
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                jest.advanceTimersByTime(TIME_OUT * 2)
+
+                expect(getObjLen(cache)).toBe(1)
             })
     ))
 
@@ -53,7 +67,7 @@ describe('expires', () => {
                     TIME_OUT
                 )
 
-                jest.runAllTimers()
+                jest.advanceTimersByTime(TIME_OUT)
             }))
             .then((loadedData) => {
                 expect(loadedData).toBe(data)
@@ -73,17 +87,10 @@ describe('expires', () => {
                     TIME_OUT
                 )
 
-                jest.runAllTimers()
+                jest.advanceTimersByTime(TIME_OUT)
             }))
 
         expect(loadExpiredItemWithoutSyncFn)
-            .rejects.toThrow(JSON.stringify({ key: targetKey }))
-    })
-
-    test('load one expired item without syncFn', () => {
-        cache[targetKey] = fakeVal
-
-        expect(tuaStorage.load({ key, syncParams }))
             .rejects.toThrow(JSON.stringify({ key: targetKey }))
     })
 
@@ -102,7 +109,7 @@ describe('expires', () => {
                     TIME_OUT
                 )
 
-                jest.runAllTimers()
+                jest.advanceTimersByTime(TIME_OUT)
             }))
             .then((loadedData) => {
                 expect(loadedData.data).toBe(data)
@@ -110,27 +117,18 @@ describe('expires', () => {
                 expect(cache[targetKey].rawData.data).toBe(data)
             })
     ))
-
-    test('load one exist expired item with syncFn', () => {
-        cache[targetKey] = fakeVal
-
-        return tuaStorage
-            .load({
-                key,
-                syncParams,
-                syncFn: () => Promise.resolve(data),
-            })
-            .then((loadedData) => {
-                expect(loadedData.data).toBe(data)
-                expect(getObjLen(cache)).toBe(1)
-                expect(cache[targetKey].rawData.data).toBe(data)
-            })
-    })
 })
 
 describe('error handling', () => {
     afterEach(() => {
         cache = tuaStorage._cache = {}
+    })
+
+    test('load one expired item without syncFn', () => {
+        tuaStorage._cache[targetKey] = fakeVal
+
+        expect(tuaStorage.load({ key, syncParams }))
+            .rejects.toThrow(JSON.stringify({ key: targetKey }))
     })
 
     test('save/load/remove one item without key or fullKey', () => {
@@ -174,6 +172,14 @@ describe('save/load/remove', () => {
         cache = tuaStorage._cache = {}
     })
 
+    test('feat[8.1]: never save data which is destined to expired', () => (
+        tuaStorage
+            .save({ key, data, syncParams, expires: 0 })
+            .then(() => {
+                expect(getObjLen(cache)).toBe(0)
+            })
+    ))
+
     test('feat[6]: save, load and remove one item with fullKey', () => {
         const expectedVal = getExpectedVal(data, DEFAULT_EXPIRES)
 
@@ -191,6 +197,22 @@ describe('save/load/remove', () => {
                 expect(getObjLen(cache)).toBe(1)
                 expect(JSON.stringify(cache[getTargetKey(fullKey)]))
                     .toBe(expectedVal)
+            })
+    })
+
+    test('load one exist expired item with syncFn', () => {
+        tuaStorage._cache[targetKey] = fakeVal
+
+        return tuaStorage
+            .load({
+                key,
+                syncParams,
+                syncFn: () => Promise.resolve(data),
+            })
+            .then((loadedData) => {
+                expect(loadedData.data).toBe(data)
+                expect(getObjLen(cache)).toBe(1)
+                expect(cache[targetKey].rawData.data).toBe(data)
             })
     })
 
