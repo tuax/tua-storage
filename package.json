@@ -9,7 +9,7 @@
         "coverage": "open coverage/lcov-report/index.html",
         "prebuild": "npm run test",
         "build": "NODE_ENV=prod rollup -c",
-        "pub": "npm run build && tnpm publish"
+        "pub": "npm run build && npm publish"
     },
     "jest": {
         "bail": true,

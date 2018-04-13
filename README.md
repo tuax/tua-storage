@@ -6,7 +6,7 @@
 ```
 # npm i -S tua-storage
 
-# tnpm i -S tua-storage
+# tnpm i -S @tencent/tua-storage
 
 # yarn add tua-storage
 ```
