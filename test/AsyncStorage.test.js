@@ -22,7 +22,6 @@ const data = 'common data'
 const syncParams = { a: 1, b: '2' }
 
 const targetKey = getTargetKey(key)
-const expectedVal = getExpectedVal(data)
 
 let cache = tuaStorage._cache
 
@@ -132,8 +131,10 @@ describe('save/load/remove', () => {
             })
     ))
 
-    test('load one exist item without cache', () => (
-        tuaStorage
+    test('load one exist item without cache', () => {
+        const expectedVal = getExpectedVal(data)
+
+        return tuaStorage
             .save({ key, data })
             .then(() => tuaStorage.load({ key, isEnableCache: false }))
             .then((loadedData) => {
@@ -150,7 +151,7 @@ describe('save/load/remove', () => {
                 expect(store.size).toBe(1)
                 expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
             })
-    ))
+    })
 
     test('remove some undefined items', () => {
         const expectedVal = getExpectedVal(data)

@@ -18,7 +18,6 @@ const syncParams = { a: 1, b: '2' }
 
 const fakeVal = getExpectedValBySyncFn(data, -1)
 const targetKey = getTargetKey(key, syncParams)
-const expectedVal = getExpectedVal(data, DEFAULT_EXPIRES)
 
 let cache = tuaStorage._cache
 
