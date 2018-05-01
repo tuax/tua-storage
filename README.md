@@ -1,6 +1,11 @@
 # tua-storage
 这个项目希望统一封装各个端（小程序、web 端、React-Native）中对于缓存层的使用。采用 ES6+ 语法，将全部 api 使用 Promise 包裹，并采用 jest 进行了完整的单元测试。
 
+<a href="https://circleci.com/gh/tuateam/tua-storage/tree/master"><img src="https://img.shields.io/circleci/project/tuateam/tua-storage/master.svg" alt="Build Status"></a>
+<a href="https://codecov.io/github/tuateam/tua-storage?branch=master"><img src="https://img.shields.io/codecov/c/github/tuateam/tua-storage/master.svg" alt="Coverage Status"></a>
+<a href="https://www.npmjs.com/package/tua-storage"><img src="https://img.shields.io/npm/v/tua-storage.svg" alt="Version"></a>
+<a href="https://www.npmjs.com/package/tua-storage"><img src="https://img.shields.io/npm/l/tua-storage.svg" alt="License"></a>
+
 ## 0.安装
 
 ```
@@ -251,3 +256,9 @@ tuaStorage.load({
 ### 8.3.启动时开启轮询清除过期数据
 
 ## TODO
+
+## License
+
+[MIT](http://opensource.org/licenses/MIT)
+
+Copyright (c) 2018-present, StEve Young
