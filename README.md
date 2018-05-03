@@ -9,11 +9,11 @@
 ## 0.安装
 
 ```
-# npm i -S tua-storage
+$ npm i -S tua-storage
 
-# tnpm i -S @tencent/tua-storage
+$ tnpm i -S @tencent/tua-storage
 
-# yarn add tua-storage
+$ yarn add tua-storage
 ```
 
 ## 1.使用说明
@@ -93,11 +93,15 @@ tuaStorage.load({
     // 同步数据所需的参数对象，可不传
     syncParams: {},
 
-    // 是否自动保存，当可被用于自动 save 时，默认为 true
+    // 调用同步方法后是否自动保存结果，默认为 true
     isAutoSave: true,
 
     // 是否优先使用内存中的缓存，默认为 true
     isEnableCache: true,
+
+    // 是否直接调用同步函数更新数据，默认为 false
+    // 适用于需要强制更新数据的场景，例如小程序中的下拉刷新
+    isForceUpdate: true,
 })
 ```
 
@@ -133,6 +137,10 @@ tuaStorage.save([
 
         // 是否优先使用内存中的缓存，默认为 true
         isEnableCache: true,
+
+        // 是否直接调用同步函数更新数据，默认为 false
+        // 适用于需要强制更新数据的场景，例如小程序中的下拉刷新
+        isForceUpdate: true,
     },
     {
         key: 'item key2 for save',
@@ -163,7 +171,7 @@ tuaStorage.load([
         // 同步数据所需的参数对象，可不传
         syncParams: {},
 
-        // 是否自动保存，当可被用于自动 save 时，默认为 true
+        // 调用同步方法后是否自动保存结果，默认为 true
         isAutoSave: true,
 
         // 是否优先使用内存中的缓存，默认为 true
@@ -253,9 +261,7 @@ tuaStorage.load({
 
 ### 8.2.启动时遍历缓存，清除过期数据
 
-### 8.3.启动时开启轮询清除过期数据
-
-## TODO
+### 8.3.启动时开启轮询每分钟清除过期数据
 
 ## License
 

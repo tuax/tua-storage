@@ -8,8 +8,8 @@
  *
  * @Author: StEve Young
  * @Date:   2017-Dec-06 11:37:27
- * @Last modified by:   steve
- * @Last modified time: 2018-Mar-14 22:55:09
+ * @Last modified by:   stevezyyang
+ * @Last modified time: 2018-Feb-26 16:26:46
  */
 
 import { version } from '../package.json'
@@ -90,6 +90,7 @@ export default class Storage {
      * @param {Object} items.syncParams 同步参数对象
      * @param {Boolean} items.isAutoSave 是否自动保存
      * @param {Boolean} items.isEnableCache 是否使用内存缓存
+     * @param {Boolean} items.isForceUpdate 是否直接调用 syncFn
      * @return {Promise}
      */
     @supportArrayParam
@@ -102,6 +103,7 @@ export default class Storage {
         syncParams = {},
         isAutoSave = true,
         isEnableCache = true,
+        isForceUpdate = false,
     }) {
         const key = fullKey ||
             this._getQueryKeyStr({ prefix, syncParams })
@@ -113,6 +115,7 @@ export default class Storage {
             syncParams,
             isAutoSave,
             isEnableCache,
+            isForceUpdate,
         })
     }
 
@@ -196,11 +199,9 @@ export default class Storage {
      * 清除 cache 中已过期的数据
      */
     _clearExpiredDataFromCache () {
-        Object.entries(this._cache)
-            .filter(([ _, val ]) => this._isDataExpired(val))
-            .map(([ key ]) => {
-                delete this._cache[key]
-            })
+        Object.keys(this._cache)
+            .filter(key => this._isDataExpired(this._cache[key]))
+            .map((key) => { delete this._cache[key] })
     }
 
     /**
@@ -231,9 +232,15 @@ export default class Storage {
      * @param {Object} item
      * @param {String} item.key 前缀
      * @param {Boolean} item.isEnableCache 是否启用 cache
+     * @param {Boolean} item.isForceUpdate 是否直接调用 syncFn
      * @return {Promise}
      */
-    _findData ({ key, isEnableCache, ...rest }) {
+    _findData ({ key, isEnableCache, isForceUpdate, ...rest }) {
+        // 忽略缓存直接去同步数据
+        if (isForceUpdate) {
+            return this._loadData({ key, ...rest })
+        }
+
         const cacheData = this._cache[key]
 
         return (isEnableCache && cacheData)

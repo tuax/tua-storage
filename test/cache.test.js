@@ -171,6 +171,27 @@ describe('save/load/remove', () => {
         cache = tuaStorage._cache = {}
     })
 
+    test('force update data when isForceUpdate is true', () => (
+        tuaStorage
+            .load({
+                key,
+                expires: 999,
+                syncParams,
+                syncFn: () => Promise.resolve(data),
+            })
+            .then(() => tuaStorage.load({
+                key,
+                syncParams,
+                isForceUpdate: true,
+                syncFn: () => Promise.resolve('force update data'),
+            }))
+            .then((loadedData) => {
+                expect(loadedData.data).toBe('force update data')
+                expect(getObjLen(cache)).toBe(1)
+                expect(cache[targetKey].rawData.data).toBe('force update data')
+            })
+    ))
+
     test('feat[8.1]: never save data which is destined to expired', () => (
         tuaStorage
             .save({ key, data, syncParams, expires: 0 })
