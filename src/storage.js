@@ -32,7 +32,7 @@ Please use:
 as the storageEngine...
 Otherwise data would be saved in cache(Memory) and lost after reload...`
 
-console.log(`Tua-Storage Version: ${version}`)
+console.log(`[TUA-STORAGE]: Version: ${version}`)
 
 // 缩写常用函数
 const pAll = Promise.all.bind(Promise)
@@ -574,7 +574,9 @@ export default class Storage {
         const syncResolveFn = () => {
             const getSameKey = ({ key: taskKey }) => taskKey === key
             const sameTask = this.taskList.find(getSameKey)
-            const finallyRemoveTask = () => {
+            const finallyRemoveTask = (err) => {
+                err && console.error(err)
+
                 this.taskList = this.taskList
                     .filter(negate(getSameKey))
             }

@@ -1,4 +1,8 @@
-node_modules/*
+dist
+*.log
+coverage
 .DS_Store
-coverage/
+node_modules
+docs/.vuepress/dist/
+
 yarn.lock
