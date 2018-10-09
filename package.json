@@ -13,7 +13,7 @@
         "cov": "open coverage/lcov-report/index.html",
         "tdd": "cross-env NODE_ENV=test jest --watch",
         "test": "cross-env NODE_ENV=test jest && codecov",
-        "lint": "eslint --fix src/**/*.js",
+        "lint": "eslint --fix src/",
         "prebuild": "rimraf dist/* & npm run test",
         "build": "cross-env NODE_ENV=prod rollup -c",
         "pub": "npm run build && npm publish"
