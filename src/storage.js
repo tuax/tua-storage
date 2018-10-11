@@ -14,15 +14,18 @@
 
 import { version } from '../package.json'
 import {
+    logger,
     negate,
     checkKey,
     jsonParse,
-    ERROR_MSG,
-    DEFAULT_EXPIRES,
     supportArrayParam,
     getParamStrFromObj,
-    DEFAULT_KEY_PREFIX,
 } from './utils'
+import {
+    ERROR_MSG,
+    DEFAULT_EXPIRES,
+    DEFAULT_KEY_PREFIX,
+} from './constants'
 
 const SE_ERROR_MSG = `There is NO valid storageEngine specified!
 Please use:
@@ -32,7 +35,7 @@ Please use:
 as the storageEngine...
 Otherwise data would be saved in cache(Memory) and lost after reload...`
 
-console.log(`[TUA-STORAGE]: Version: ${version}`)
+logger.log(`[TUA-STORAGE]: Version: ${version}`)
 
 // 缩写常用函数
 const pAll = Promise.all.bind(Promise)
@@ -278,7 +281,7 @@ export default class Storage {
             _getAllKeys()
                 .then(this._getKeysByWhiteList(whiteList))
                 .then(bindFnToSE(multiRemove))
-                .catch(console.error)
+                .catch(logger.error)
         )
         /**
          * 适配 AsyncStorage 读取数据
@@ -340,7 +343,7 @@ export default class Storage {
                 .then(keys => keys.filter(isNotInWhiteList))
                 .then(keys => keys.map(k => _removeItem(k)))
                 .then(pAll)
-                .catch(console.error)
+                .catch(logger.error)
         }
         /**
          * 适配 localStorage 读取数据
@@ -459,7 +462,7 @@ export default class Storage {
 
         // 未指定存储引擎
         if (!this.SE) {
-            console.warn(SE_ERROR_MSG)
+            logger.warn(SE_ERROR_MSG)
 
             return defaultSEMap
         }
@@ -494,13 +497,13 @@ export default class Storage {
 
         if (requiredApisNotFound) {
             const displayMissingApis = (apis) =>
-                console.warn(`Missing required apis:\n* ${apis.join('\n* ')}`)
+                logger.warn(`Missing required apis:\n* ${apis.join('\n* ')}`)
 
             missedLSApis.length && displayMissingApis(missedLSApis)
             missedASApis.length && displayMissingApis(missedASApis)
             missedWXApis.length && displayMissingApis(missedWXApis)
 
-            console.warn(SE_ERROR_MSG)
+            logger.warn(SE_ERROR_MSG)
         }
 
         try {
@@ -575,10 +578,13 @@ export default class Storage {
             const getSameKey = ({ key: taskKey }) => taskKey === key
             const sameTask = this.taskList.find(getSameKey)
             const finallyRemoveTask = (err) => {
-                err && console.error(err)
+                this.taskList = this.taskList.filter(negate(getSameKey))
 
-                this.taskList = this.taskList
-                    .filter(negate(getSameKey))
+                if (err) {
+                    logger.error(err)
+
+                    return Promise.reject(err)
+                }
             }
 
             // 如果有相同的任务，则共用该任务
@@ -587,7 +593,7 @@ export default class Storage {
             const originTask = syncFn(syncParams)
             const isPromise = !!(originTask && originTask.then)
 
-            if (!isPromise) return pRej(ERROR_MSG.PROMISE)
+            if (!isPromise) return pRej(Error(ERROR_MSG.PROMISE))
 
             const task = originTask
                 // 格式化数据结构
@@ -608,7 +614,7 @@ export default class Storage {
                         key: key.replace(this.storageKeyPrefix, ''),
                         data: { code, data },
                         expires,
-                    }).catch(console.warn)
+                    }).catch(logger.warn)
 
                     return { code, data }
                 })

@@ -1,5 +1,5 @@
-import Storage, { MSG_KEY } from '../src/storage'
-import { DEFAULT_KEY_PREFIX } from '../src/utils'
+import TuaStorage from '../src/storage'
+import { DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
     getObjLen,
@@ -9,26 +9,27 @@ import {
     getExpectedValBySyncFn,
 } from './utils'
 
+jest.spyOn(Storage.prototype, 'setItem')
+jest.spyOn(Storage.prototype, 'getItem')
+jest.spyOn(Storage.prototype, 'removeItem')
+
 const key = 'common key'
 const data = 'common data'
-const fullKey = 'common fullKey'
 const syncParams = { a: 1, b: '2' }
 
-const targetKey = getTargetKey(key, syncParams)
-
-const tuaStorage = new Storage({
+const tuaStorage = new TuaStorage({
     storageEngine: localStorage,
     defaultExpires: expireTime,
 })
 
 let cache = tuaStorage._cache
-let store = localStorage.__STORE__
+const store = localStorage
 
 describe('timers', () => {
     jest.useFakeTimers()
 
     // 专门用于测试时间相关的实例
-    const tuaStorage = new Storage({
+    const tuaStorage = new TuaStorage({
         storageEngine: localStorage,
     })
     let cache = tuaStorage._cache
@@ -36,7 +37,6 @@ describe('timers', () => {
     afterEach(() => {
         localStorage.clear()
         cache = tuaStorage._cache = {}
-        store = localStorage.__STORE__
         Date.now = jest.fn(() => +new Date)
     })
 
@@ -75,7 +75,6 @@ describe('initial state', () => {
     afterEach(() => {
         localStorage.clear()
         cache = tuaStorage._cache = {}
-        store = localStorage.__STORE__
     })
 
     test('feat[8.2]: clean initial expired data', () => {
@@ -109,7 +108,6 @@ describe('save/load/clear/remove', () => {
     afterEach(() => {
         localStorage.clear()
         cache = tuaStorage._cache = {}
-        store = localStorage.__STORE__
     })
 
     test('feat[8.1]: never save data which is destined to expired', () => (
@@ -150,6 +148,15 @@ describe('save/load/clear/remove', () => {
 
             expect(localStorage.setItem).toHaveBeenCalledTimes(1)
         })
+    })
+
+    test('syncFn fail', () => {
+        const itemTobeLoaded = {
+            key: 'inexistent data',
+            syncFn: () => Promise.reject(Error(data)),
+        }
+
+        return expect(tuaStorage.load(itemTobeLoaded)).rejects.toThrowError(data)
     })
 
     test('load some exist items with one key and disable cache', () => {
