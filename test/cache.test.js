@@ -1,15 +1,14 @@
-import Storage from '../src/storage'
-import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/utils'
+import TuaStorage from '../src/storage'
+import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/constants'
 import {
     TIME_OUT,
     getObjLen,
-    expireTime,
     getTargetKey,
     getExpectedVal,
     getExpectedValBySyncFn
 } from './utils'
 
-const tuaStorage = new Storage()
+const tuaStorage = new TuaStorage()
 
 const key = 'common key'
 const data = 'common data'
@@ -25,7 +24,7 @@ describe('timers', () => {
     jest.useFakeTimers()
 
     // 专门用于测试时间相关的实例
-    const tuaStorage = new Storage({ storageEngine: {} })
+    const tuaStorage = new TuaStorage({ storageEngine: {} })
     let cache = tuaStorage._cache
 
     afterEach(() => {
@@ -89,8 +88,10 @@ describe('timers', () => {
                 jest.advanceTimersByTime(TIME_OUT)
             }))
 
+        const str = JSON.stringify({ key: targetKey })
+
         expect(loadExpiredItemWithoutSyncFn)
-            .rejects.toThrow(JSON.stringify({ key: targetKey }))
+            .rejects.toEqual(Error(str))
     })
 
     test('save and load one exist expired item with syncFn', () => (
@@ -126,17 +127,16 @@ describe('error handling', () => {
     test('load one expired item without syncFn', () => {
         tuaStorage._cache[targetKey] = fakeVal
 
+    const str = JSON.stringify({ key: targetKey })
+
         expect(tuaStorage.load({ key, syncParams }))
-            .rejects.toThrow(JSON.stringify({ key: targetKey }))
+            .rejects.toEqual(Error(str))
     })
 
     test('save/load/remove one item without key or fullKey', () => {
-        expect(tuaStorage.save({}))
-            .rejects.toThrow(ERROR_MSG.KEY)
-        expect(tuaStorage.load({}))
-            .rejects.toThrow(ERROR_MSG.KEY)
-        expect(tuaStorage.remove())
-            .rejects.toThrow(ERROR_MSG.KEY)
+        expect(tuaStorage.save()).rejects.toEqual(Error(ERROR_MSG.KEY))
+        expect(tuaStorage.load({})).rejects.toEqual(Error(ERROR_MSG.KEY))
+        expect(tuaStorage.remove()).rejects.toEqual(Error(ERROR_MSG.KEY))
     })
 
     test('no data found and no syncFn', () => {
@@ -148,9 +148,11 @@ describe('error handling', () => {
             { key },
         ]
 
+        const str = JSON.stringify({ key: getTargetKey(key) })
+
         expect(tuaStorage.load(dataArr))
             .rejects
-            .toThrow(JSON.stringify({ key: getTargetKey(key) }))
+            .toEqual(Error(str))
     })
 
     test('syncFn does not return a promise', () => {
@@ -162,7 +164,7 @@ describe('error handling', () => {
         }
 
         expect(tuaStorage.load(loadParam))
-            .rejects.toThrow(ERROR_MSG.PROMISE)
+            .rejects.toEqual(Error(ERROR_MSG.PROMISE))
     })
 })
 

@@ -1,7 +1,7 @@
 import AsyncStorageCls from 'mock-async-storage'
 
 import Storage from '../src/storage'
-import { DEFAULT_KEY_PREFIX } from '../src/utils'
+import { DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
     getObjLen,

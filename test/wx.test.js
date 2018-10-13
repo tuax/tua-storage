@@ -8,7 +8,7 @@ import {
     getTargetKey,
     getExpectedVal,
 } from './utils'
-import { DEFAULT_KEY_PREFIX } from '../src/utils'
+import { DEFAULT_KEY_PREFIX } from '../src/constants'
 
 const wx = new wxCls()
 

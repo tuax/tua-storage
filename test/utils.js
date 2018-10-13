@@ -1,7 +1,9 @@
 import {
     getParamStrFromObj,
-    DEFAULT_KEY_PREFIX,
 } from '../src/utils'
+import {
+    DEFAULT_KEY_PREFIX,
+} from '../src/constants'
 
 export const expireTime = 3
 
