@@ -1,6 +1,6 @@
 import json from 'rollup-plugin-json'
 import babel from 'rollup-plugin-babel'
-import eslint from 'rollup-plugin-eslint'
+import { eslint } from 'rollup-plugin-eslint'
 
 export default {
     input: 'src/storage.js',
