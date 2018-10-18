@@ -268,3 +268,5 @@ tuaStorage.load({
 [MIT](http://opensource.org/licenses/MIT)
 
 Copyright (c) 2018-present, StEve Young
+
+inspired by [react-native-storage](https://github.com/sunnylqm/react-native-storage)
