@@ -5,11 +5,6 @@
  *   3.load：读取函数
  *   4.remove：删除函数
  *   5.clear：清除函数
- *
- * @Author: StEve Young
- * @Date:   2017-Dec-06 11:37:27
- * @Last modified by:   stevezyyang
- * @Last modified time: 2018-Feb-26 16:26:46
  */
 
 import { version } from '../package.json'
@@ -217,16 +212,18 @@ export default class Storage {
         this._clearExpiredDataFromCache()
 
         return _getAllKeys()
-            .then(keys => keys.map(
-                key => _getItem(key)
+            .then((keys) => keys
+                .map((key) => _getItem(key)
                     .then(jsonParse)
                     // 不处理 JSON.parse 的错误
                     .catch(() => {})
                     .then(this._isDataExpired.bind(this))
-                    .then(isExpired => (
-                        isExpired ? _removeItem(key) : pRes()
-                    ))
-            ))
+                    .then(isExpired => isExpired
+                        ? _removeItem(key)
+                        : pRes()
+                    )
+                )
+            )
             .then(pAll)
     }
 

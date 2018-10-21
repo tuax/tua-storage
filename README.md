@@ -15,17 +15,17 @@
     <a href="https://www.npmjs.com/package/tua-storage"><img src="https://img.shields.io/npm/l/tua-storage.svg" alt="License"></a>
 </p>
 
-## 0.安装
+## 安装
 
-```
+```bash
 $ npm i -S tua-storage
-
-$ tnpm i -S @tencent/tua-storage
-
+# OR
 $ yarn add tua-storage
 ```
 
-## 1.使用说明
+`tua-storage` 是通过初始化时传入的 `storageEngine` 选项来区分不同的端。
+
+## 使用说明
 目前 tua-storage 支持以下使用场景：
 
 * web 场景：使用 localStorage 作为缓存
@@ -33,7 +33,7 @@ $ yarn add tua-storage
 * Node.js 场景：直接使用内存作为缓存（其实就是使用 object）
 * React-Native 场景：使用 AsyncStorage 作为缓存
 
-## 2.初始化
+## 初始化
 建议在全局变量上挂载 TuaStorage 的实例
 
 ```js
@@ -65,7 +65,7 @@ window.tuaStorage = window.tuaStorage || new TuaStorage({
 global.tuaStorage = global.tuaStorage || new TuaStorage({ ... })
 ```
 
-## 3.保存、读取、删除、清除
+## 保存、读取、删除、清除
 1.保存数据
 
 ```js
@@ -128,7 +128,7 @@ tuaStorage.remove('item key for remove')
 tuaStorage.clear(['item key for reserve', 'important data'])
 ```
 
-## 4.批量保存、批量读取、批量删除
+## 批量保存、批量读取、批量删除
 1.批量保存数据
 
 ```js
@@ -202,7 +202,7 @@ tuaStorage.remove([
 ])
 ```
 
-## 5.保存数据永不超时
+## 保存数据永不超时
 设置 expires 为 null 则缓存永不过期。
 
 ```js
@@ -213,7 +213,7 @@ tuaStorage.save({
 })
 ```
 
-## 6.不使用前缀
+## 不使用前缀
 保存数据时使用 fullKey，则不自动添加前缀，且可以直接通过 fullKey 读取数据。
 
 ```js
@@ -232,7 +232,7 @@ tuaStorage.remove({
 })
 ```
 
-## 7.并发相同请求只请求一次
+## 并发相同请求只请求一次
 同时读取同一个不存在的数据，只调用一次同步函数。
 
 ```js
@@ -265,12 +265,10 @@ tuaStorage.load({
 // 1
 ```
 
-## 8.过期数据的清理
-### 8.1.保存数据时若 `expires <= 0` 则不缓存数据
-
-### 8.2.启动时遍历缓存，清除过期数据
-
-### 8.3.启动时开启轮询每分钟清除过期数据
+## 过期数据的清理
+* 保存数据时若 `expires <= 0` 则不缓存数据
+* 启动时遍历缓存，清除过期数据
+* 启动时开启轮询每分钟清除过期数据
 
 ## License
 
