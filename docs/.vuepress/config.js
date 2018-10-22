@@ -42,7 +42,7 @@ module.exports = {
                         'installation',
                         '',
                         'sync-data',
-                        '../config/',
+                        '../api/',
                     ],
                 },
             ],
