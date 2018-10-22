@@ -30,7 +30,7 @@ Please use:
 as the storageEngine...
 Otherwise data would be saved in cache(Memory) and lost after reload...`
 
-logger.log(`[TUA-STORAGE]: Version: ${version}`)
+logger.log(`Version: ${version}`)
 
 // 缩写常用函数
 const pAll = Promise.all.bind(Promise)
