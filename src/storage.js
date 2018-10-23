@@ -5,11 +5,6 @@
  *   3.load：读取函数
  *   4.remove：删除函数
  *   5.clear：清除函数
- *
- * @Author: StEve Young
- * @Date:   2017-Dec-06 11:37:27
- * @Last modified by:   stevezyyang
- * @Last modified time: 2018-Feb-26 16:26:46
  */
 
 import { version } from '../package.json'
@@ -35,7 +30,7 @@ Please use:
 as the storageEngine...
 Otherwise data would be saved in cache(Memory) and lost after reload...`
 
-logger.log(`[TUA-STORAGE]: Version: ${version}`)
+logger.log(`Version: ${version}`)
 
 // 缩写常用函数
 const pAll = Promise.all.bind(Promise)
@@ -88,9 +83,9 @@ export default class Storage {
      * @param {Array|Object} items
      * @param {String} items.key 前缀
      * @param {Function} items.syncFn 同步数据的方法
-     * @param {Number} items.expires 超时时间（单位：秒）
      * @param {String} items.fullKey 完整关键词
      * @param {Object} items.syncParams 同步参数对象
+     * @param {Number} items.expires 超时时间（单位：秒）
      * @param {Boolean} items.isAutoSave 是否自动保存
      * @param {Boolean} items.isEnableCache 是否使用内存缓存
      * @param {Boolean} items.isForceUpdate 是否直接调用 syncFn
@@ -101,25 +96,13 @@ export default class Storage {
     load ({
         key: prefix = '',
         syncFn = this.syncFnMap[prefix],
-        expires = this.defaultExpires,
         fullKey = '',
         syncParams = {},
-        isAutoSave = true,
-        isEnableCache = true,
-        isForceUpdate = false,
+        ...rest
     }) {
-        const key = fullKey ||
-            this._getQueryKeyStr({ prefix, syncParams })
+        const key = fullKey || this._getQueryKeyStr({ prefix, syncParams })
 
-        return this._findData({
-            key,
-            syncFn,
-            expires,
-            syncParams,
-            isAutoSave,
-            isEnableCache,
-            isForceUpdate,
-        })
+        return this._findData({ key, syncFn, syncParams, ...rest })
     }
 
     /**
@@ -170,9 +153,7 @@ export default class Storage {
             ? this.neverExpireMark
             : parseInt(Date.now() / 1000) + expires
 
-        const key = fullKey ||
-            this._getQueryKeyStr({ prefix, syncParams })
-
+        const key = fullKey || this._getQueryKeyStr({ prefix, syncParams })
         const dataToSave = { rawData, expires: realExpires }
 
         if (!isNeverExpired && expires <= 0) {
@@ -217,16 +198,18 @@ export default class Storage {
         this._clearExpiredDataFromCache()
 
         return _getAllKeys()
-            .then(keys => keys.map(
-                key => _getItem(key)
+            .then((keys) => keys
+                .map((key) => _getItem(key)
                     .then(jsonParse)
                     // 不处理 JSON.parse 的错误
                     .catch(() => {})
                     .then(this._isDataExpired.bind(this))
-                    .then(isExpired => (
-                        isExpired ? _removeItem(key) : pRes()
-                    ))
-            ))
+                    .then(isExpired => isExpired
+                        ? _removeItem(key)
+                        : pRes()
+                    )
+                )
+            )
             .then(pAll)
     }
 
@@ -238,7 +221,12 @@ export default class Storage {
      * @param {Boolean} item.isForceUpdate 是否直接调用 syncFn
      * @return {Promise}
      */
-    _findData ({ key, isEnableCache, isForceUpdate, ...rest }) {
+    _findData ({
+        key,
+        isEnableCache = true,
+        isForceUpdate = false,
+        ...rest
+    }) {
         // 忽略缓存直接去同步数据
         if (isForceUpdate) {
             return this._loadData({ key, ...rest })
@@ -532,7 +520,7 @@ export default class Storage {
 
         return keys => keys.filter(
             key => mergedWhiteList
-                .every(item => !key.includes(item))
+                .every(item => key.indexOf(item) === -1)
         )
     }
 
@@ -570,7 +558,7 @@ export default class Storage {
         expires,
         cacheData,
         syncParams,
-        isAutoSave,
+        isAutoSave = true,
     }) {
         const isNoCacheData = cacheData === null || cacheData === undefined
 

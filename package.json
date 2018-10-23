@@ -1,6 +1,6 @@
 {
     "name": "tua-storage",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "description": "A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
     "main": "dist/umd.js",
     "module": "dist/es.js",
@@ -10,10 +10,13 @@
         "dist/umd.js"
     ],
     "scripts": {
+        "docs": "vuepress dev docs -h localhost",
+        "docs:build": "vuepress build docs",
         "cov": "open coverage/lcov-report/index.html",
         "tdd": "cross-env NODE_ENV=test jest --watch",
         "test": "cross-env NODE_ENV=test jest && codecov",
-        "lint": "eslint --fix src/",
+        "lint": "eslint --fix src/ test/",
+        "deploy": "yarn docs:build && gh-pages -m \"[ci skip]\" -d docs/.vuepress/dist",
         "prebuild": "rimraf dist/* & npm run test",
         "build": "cross-env NODE_ENV=prod rollup -c",
         "pub": "npm run build && npm publish"
@@ -85,6 +88,7 @@
         "eslint-plugin-node": "^7.0.1",
         "eslint-plugin-promise": "^4.0.1",
         "eslint-plugin-standard": "^4.0.0",
+        "gh-pages": "^2.0.1",
         "husky": "^1.1.1",
         "jest": "^23.6.0",
         "jest-localstorage-mock": "^2.2.0",
@@ -94,6 +98,7 @@
         "rollup": "^0.66.5",
         "rollup-plugin-babel": "^3.0.3",
         "rollup-plugin-eslint": "^5.0.0",
-        "rollup-plugin-json": "^3.1.0"
+        "rollup-plugin-json": "^3.1.0",
+        "vuepress": "^0.14.4"
     }
 }
