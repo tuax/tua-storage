@@ -19,7 +19,7 @@ new TuaStorage({
 ## whiteList 白名单数组
 默认为 []，调用清空数据的 `clear` 方法时，会跳过其中的元素。
 
-## storageEngine
+## storageEngine 存储引擎
 默认为 null, 可传递 `wx` / `localStorage` / `AsyncStorage`
 
 ::: warning

@@ -22,8 +22,8 @@ module.exports = {
                 link: '/quick-start/',
             },
             {
-                text: 'api',
-                link: '/api/',
+                text: '配置和方法',
+                link: '/config-methods/',
             },
             {
                 text: '生态系统',
@@ -42,13 +42,13 @@ module.exports = {
                         'installation',
                         '',
                         'sync-data',
-                        '../api/',
+                        '../config-methods/',
                     ],
                 },
             ],
-            '/api/': [
+            '/config-methods/': [
                 {
-                    title: 'api',
+                    title: '配置和方法',
                     collapsable: false,
                     children: [
                         '',

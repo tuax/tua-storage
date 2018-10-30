@@ -130,10 +130,6 @@ try {
 ## load 异步读取
 异步读取，可以接收一个对象，或是对象数组。
 
-### key 关键词
-* 类型：`String`
-* 必须传递不可省略
-
 ```js
 // 返回一个 Promise
 tuaStorage.load({ key: 'data key' })
@@ -151,15 +147,23 @@ async () => {
 }
 ```
 
+### key 关键词
+* 类型：`String`
+* 必须传递不可省略
+
 ### syncFn 同步函数
 * 类型：`Function`
 * 默认值：`undefined` 或是初始化时 `syncFnMap` 中的对应函数
+
+::: tip
+当数据不存在或已过期时，调用同步函数进行数据同步。详细使用方法请参阅 [数据同步](../quick/start/sync-data.md) 章节。
+:::
 
 ### syncParams 同步参数对象
 * 类型：`Object`
 * 默认值：`{}`
 
-当数据不存在或已过期时，调用同步函数进行数据同步。详细使用方法请参阅 [数据同步](../quick/start/sync-data.md) 章节。
+调用同步函数时传递参数。
 
 ### fullKey 完整关键词
 * 类型：`String`
@@ -192,7 +196,7 @@ async () => {
 默认为 false，当你需要立即同步数据时，将该项置为 true。常用于小程序下拉刷新的场景。
 
 ::: tip
-别忘了还可以传递数组，读取多个数据哟~（将会以 `Promise.all` 的形式调用）
+别忘了还可以传递数组，读取多个数据哟~将会以 `Promise.all` 的形式调用。
 :::
 
 ## loadSync 同步读取
@@ -252,7 +256,7 @@ tuaStorage.remove({ fullKey: 'data key' })
 这时删除的就是 `key` 为 `'data key'` 的数据了。
 
 ::: tip
-别忘了还可以传递数组，删除多个数据哟~（将会以 `Promise.all` 的形式调用）
+别忘了还可以传递数组，删除多个数据哟~
 :::
 
 ## removeSync 同步删除
@@ -303,7 +307,9 @@ tuaStorage.clear(['key'])
 }
 ```
 
+::: tip
 因为内部是通过 `indexOf` 来判断的，所以不必填写完整的 `key` 值。
+:::
 
 ## clearSync 同步清除
 clear 方法的同步版本，在不支持同步方法的场景（AsyncStorage）下会抛出错误。
@@ -325,10 +331,10 @@ getInfo 方法的同步版本，在不支持同步方法的场景（AsyncStorage
 ```js
 try {
     const {
-        // 各种场景下都有
+        // 各种场景下都会有
         keys,
 
-        // 小程序场景下有
+        // 小程序场景下才有
         limitSize
         currentSize,
     } = tuaStorage.getInfoSync()
@@ -339,5 +345,5 @@ try {
 }
 ```
 
-## 其他方法
-如果你还有什么其他需要的方法，可以填写 [issues](https://github.com/tuateam/tua-storage/issues)，或者直接提个 [Pull Request](https://github.com/tuateam/tua-storage/pulls) 吧~。
+## 其他方法、场景
+如果你还有什么其他需要的方法或场景，可以填写 [issues](https://github.com/tuateam/tua-storage/issues)，或者直接提个 [Pull Request](https://github.com/tuateam/tua-storage/pulls) 吧~。
