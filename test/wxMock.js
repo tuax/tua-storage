@@ -1,6 +1,12 @@
 export default class Wx {
     constructor () {
         this.store = {}
+
+        this.getStorageSync = this.getStorageSync.bind(this)
+        this.setStorageSync = this.setStorageSync.bind(this)
+        this.removeStorageSync = this.removeStorageSync.bind(this)
+        this.getStorageInfoSync = this.getStorageInfoSync.bind(this)
+        this.getStorageInfoSync = this.getStorageInfoSync.bind(this)
     }
 
     _clear () {
@@ -95,10 +101,8 @@ export default class Wx {
         complete,
     }) {
         try {
-            const keys = Object.keys(this.store)
-
             success && success({
-                keys,
+                keys: Object.keys(this.store),
                 errMsg: 'getStorageInfo:ok',
                 limitSize: 10240, // kb
                 currentSize: 0, // kb
@@ -112,7 +116,7 @@ export default class Wx {
 
     getStorageInfoSync () {
         return {
-            keys,
+            keys: Object.keys(this.store),
             limitSize: 10240, // kb
             currentSize: 0, // kb
         }

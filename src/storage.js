@@ -13,6 +13,8 @@ import {
     negate,
     checkKey,
     jsonParse,
+    getFullKey,
+    getDataToSave,
     supportArrayParam,
     getParamStrFromObj,
 } from './utils'
@@ -54,9 +56,9 @@ export default class Storage {
         this.neverExpireMark = null // 永不超时的标志
         this.storageKeyPrefix = storageKeyPrefix
 
-        this.SEMap = this._getFormatedSE()
-
         this._cache = Object.create(null)
+
+        this.SEMap = this._getFormatedSE()
 
         const clearExpiredData = this._clearExpiredData.bind(this)
         // 轮询扫描缓存，清除过期数据
@@ -67,7 +69,7 @@ export default class Storage {
     /* -- 各种对外暴露方法 -- */
 
     /**
-     * 清除非白名单中的所有缓存数据
+     * 异步清除非白名单中的所有缓存数据
      * @param {String[]} whiteList 白名单
      * @return {Promise}
      */
@@ -79,7 +81,19 @@ export default class Storage {
     }
 
     /**
-     * 读取数据，可传递数组或单对象
+     * 同步清除非白名单中的所有缓存数据
+     * @param {String[]} whiteList 白名单
+     * @return {Promise}
+     */
+    clearSync (whiteList = []) {
+        // 首先清除缓存
+        this._clearFromCache(whiteList)
+
+        return this.SEMap._clearSync(whiteList)
+    }
+
+    /**
+     * 异步读取数据，可传递数组或单对象
      * @param {Array|Object} items
      * @param {String} items.key 前缀
      * @param {Function} items.syncFn 同步数据的方法
@@ -91,28 +105,44 @@ export default class Storage {
      * @param {Boolean} items.isForceUpdate 是否直接调用 syncFn
      * @return {Promise}
      */
-    @supportArrayParam
+    @supportArrayParam()
     @checkKey
+    @getFullKey
     load ({
-        key: prefix = '',
+        key,
+        prefix,
         syncFn = this.syncFnMap[prefix],
-        fullKey = '',
-        syncParams = {},
+        syncParams,
         ...rest
     }) {
-        const key = fullKey || this._getQueryKeyStr({ prefix, syncParams })
-
         return this._findData({ key, syncFn, syncParams, ...rest })
     }
 
     /**
-     * 删除数据，可传递数组或字符串或单对象(fullKey)
+     * 同步读取数据，可传递数组或单对象
+     * @param {Array|Object} items
+     * @param {String} items.key 前缀
+     * @param {String} items.fullKey 完整关键词
+     * @param {Object} items.syncParams 同步参数对象
+     * @return {Promise}
+     */
+    @supportArrayParam(false)
+    @checkKey
+    @getFullKey
+    loadSync ({ key }) {
+        const loadedData = this.SEMap._getItemSync(key)
+
+        return loadedData && loadedData.rawData
+    }
+
+    /**
+     * 异步删除数据，可传递数组或字符串或单对象(fullKey)
      * @param {String[]|String|Object} items
      * @param {String|Object} items.prefix 数据前缀
      * @param {String} items.prefix.fullKey 完整的数据前缀
      * @return {Promise}
      */
-    @supportArrayParam
+    @supportArrayParam()
     @checkKey
     remove (prefix) {
         const fullKey = typeof prefix === 'object'
@@ -127,7 +157,28 @@ export default class Storage {
     }
 
     /**
-     * 保存数据，可传递数组或单对象
+     * 同步删除数据，可传递数组或字符串或单对象(fullKey)
+     * @param {String[]|String|Object} items
+     * @param {String|Object} items.prefix 数据前缀
+     * @param {String} items.prefix.fullKey 完整的数据前缀
+     * @return {Promise}
+     */
+    @supportArrayParam()
+    @checkKey
+    removeSync (prefix) {
+        const fullKey = typeof prefix === 'object'
+            ? prefix.fullKey
+            : ''
+
+        const key = fullKey || this.storageKeyPrefix + prefix
+
+        delete this._cache[key]
+
+        return this.SEMap._removeItemSync(key)
+    }
+
+    /**
+     * 异步保存数据，可传递数组或单对象
      * @param {Array|Object} items
      * @param {String} items.key 前缀
      * @param {Object|String|Number} items.data 待保存数据
@@ -137,35 +188,63 @@ export default class Storage {
      * @param {Boolean} items.isEnableCache 是否使用内存缓存
      * @return {Promise}
      */
-    @supportArrayParam
+    @supportArrayParam()
     @checkKey
+    @getFullKey
+    @getDataToSave
     save ({
-        key: prefix = '',
-        data: rawData,
-        expires = this.defaultExpires,
-        fullKey = '',
-        syncParams = {},
+        key,
+        dataToSave,
         isEnableCache = true,
     }) {
-        const isNeverExpired = this._isNeverExpired(expires)
-        const realExpires = isNeverExpired
-            // 永不超时
-            ? this.neverExpireMark
-            : parseInt(Date.now() / 1000) + expires
-
-        const key = fullKey || this._getQueryKeyStr({ prefix, syncParams })
-        const dataToSave = { rawData, expires: realExpires }
-
-        if (!isNeverExpired && expires <= 0) {
-            // 不保存注定过期的数据
-            return pRes()
-        }
-
         if (isEnableCache) {
             this._cache[key] = dataToSave
         }
 
         return this.SEMap._setItem(key, dataToSave)
+    }
+
+    /**
+     * 同步保存数据，可传递数组或单对象
+     * @param {Array|Object} items
+     * @param {String} items.key 前缀
+     * @param {Object|String|Number} items.data 待保存数据
+     * @param {Number} items.expires 超时时间（单位：秒）
+     * @param {String} items.fullKey 完整关键词
+     * @param {Object} items.syncParams 同步参数对象
+     * @param {Boolean} items.isEnableCache 是否使用内存缓存
+     * @return {Promise}
+     */
+    @supportArrayParam()
+    @checkKey
+    @getFullKey
+    @getDataToSave
+    saveSync ({
+        key,
+        dataToSave,
+        isEnableCache = true,
+    }) {
+        if (isEnableCache) {
+            this._cache[key] = dataToSave
+        }
+
+        this.SEMap._setItemSync(key, dataToSave)
+    }
+
+    /**
+     * 异步获取当前 storage 的相关信息
+     * @return {Promise}
+     */
+    getInfo () {
+        return this.SEMap._getInfo()
+    }
+
+    /**
+     * 同步获取当前 storage 的相关信息
+     * @return {Promise}
+     */
+    getInfoSync () {
+        return this.SEMap._getInfoSync()
     }
 
     /* -- 各种私有方法 -- */
@@ -185,7 +264,7 @@ export default class Storage {
     _clearExpiredDataFromCache () {
         Object.keys(this._cache)
             .filter(key => this._isDataExpired(this._cache[key]))
-            .map((key) => { delete this._cache[key] })
+            .map(key => { delete this._cache[key] })
     }
 
     /**
@@ -204,10 +283,7 @@ export default class Storage {
                     // 不处理 JSON.parse 的错误
                     .catch(() => {})
                     .then(this._isDataExpired.bind(this))
-                    .then(isExpired => isExpired
-                        ? _removeItem(key)
-                        : pRes()
-                    )
+                    .then(isExpired => isExpired ? _removeItem(key) : pRes())
                 )
             )
             .then(pAll)
@@ -394,45 +470,32 @@ export default class Storage {
         const rmFn = promisify(removeStorage)
         const getFn = promisify(getStorage)
         const setFn = promisify(setStorage)
-        const infoFn = promisify(getStorageInfo)
 
-        /**
-         * 清除非白名单中的数据
-         * @param {String[]} whiteList 白名单
-         * @return {Promise}
-         */
         const _clear = (whiteList) => (
             _getAllKeys()
                 .then(this._getKeysByWhiteList(whiteList))
                 .then((keys) => keys.map(_removeItem))
                 .then(pAll)
         )
-        /**
-         * 适配小程序读取数据
-         * @param {String} key
-         * @return {Promise}
-         */
-        const _getItem = (key) => getFn({ key }).then(({ data }) => data)
-        /**
-         * 适配小程序保存数据
-         * @param {String} key
-         * @param {String} data
-         * @return {Promise}
-         */
         const _setItem = (key, data) => setFn({ key, data })
-        /**
-         * 适配小程序删除单条数据
-         * @param {String} key
-         * @return {Promise}
-         */
-        const _removeItem = (key) => rmFn({ key })
-        /**
-         * 返回小程序中的所有 key
-         * @return {Promise}
-         */
-        const _getAllKeys = () => infoFn().then(({ keys }) => keys)
+        const _getItem = key => getFn({ key }).then(({ data }) => data)
+        const _removeItem = key => rmFn({ key })
+        const _getAllKeys = () => _getInfo().then(({ keys }) => keys)
+        const _getInfo = promisify(getStorageInfo)
 
-        return { _clear, _getItem, _setItem, _getAllKeys, _removeItem }
+        const _clearSync = (whiteList) => {
+            const allKeys = _getAllKeysSync()
+
+            this._getKeysByWhiteList(whiteList)(allKeys)
+                .map(_removeItemSync)
+        }
+        const _getItemSync = this.SE.getStorageSync
+        const _setItemSync = this.SE.setStorageSync
+        const _getInfoSync = this.SE.getStorageInfoSync
+        const _getAllKeysSync = () => _getInfoSync().keys
+        const _removeItemSync = this.SE.removeStorageSync
+
+        return { _clear, _setItem, _getItem, _getInfo, _getAllKeys, _removeItem, _setItemSync, _getItemSync, _getInfoSync, _removeItemSync, _clearSync }
     }
 
     /**
@@ -444,6 +507,7 @@ export default class Storage {
             _clear: pRes,
             _setItem: pRes,
             _getItem: pRes,
+            _getInfo: pRes,
             _getAllKeys: () => pRes([]),
             _removeItem: pRes,
         }
@@ -461,6 +525,7 @@ export default class Storage {
                 'getStorage',
                 'removeStorage',
                 'getStorageInfo',
+                'getStorageInfoSync',
             ],
             ls: ['getItem', 'setItem', 'removeItem'],
             as: ['getItem', 'setItem', 'multiRemove'],

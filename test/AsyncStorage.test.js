@@ -40,7 +40,7 @@ describe('timers', () => {
         Date.now = jest.fn(() => +new Date)
     })
 
-    test('feat[8.3]: setInterval to clean expired data', () => (
+    test('setInterval to clean expired data', () => (
         tuaStorage
             .save([
                 { key: `${key}1`, data, syncParams, expires: 10 },
@@ -77,7 +77,7 @@ describe('initial state', () => {
         AsyncStorage.clear()
     })
 
-    test('feat[8.2]: clean initial expired data', () => (
+    test('clean initial expired data', () => (
         Promise
             .all([
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10)),
@@ -120,7 +120,7 @@ describe('save/load/remove', () => {
         AsyncStorage.clear()
     })
 
-    test('feat[8.1]: never save data which is destined to expired', () => (
+    test('never save data which is destined to expired', () => (
         tuaStorage
             .save({ key, data, syncParams, expires: 0 })
             .then(() => {
