@@ -3,35 +3,12 @@ export default class Wx {
         this.store = {}
     }
 
-    _clear (key) {
+    _clear () {
         this.store = {}
     }
 
     get _length () {
         return Object.keys(this.store).length
-    }
-
-    removeStorageSync (key) {
-        delete this.store[key]
-    }
-
-    removeStorage ({
-        key,
-        fail,
-        success,
-        complete,
-    }) {
-        try {
-            delete this.store[key]
-
-            success && success({
-                errMsg: 'removeStorage:ok',
-            })
-        } catch ({ message }) {
-            fail && fail({ errMsg: message })
-        } finally {
-            complete && complete()
-        }
     }
 
     getStorage ({
@@ -60,6 +37,10 @@ export default class Wx {
         }
     }
 
+    getStorageSync (key) {
+        return this.store[key]
+    }
+
     setStorage ({
         key,
         data,
@@ -81,6 +62,33 @@ export default class Wx {
         }
     }
 
+    setStorageSync (key, data) {
+        this.store[key] = data
+    }
+
+    removeStorage ({
+        key,
+        fail,
+        success,
+        complete,
+    }) {
+        try {
+            delete this.store[key]
+
+            success && success({
+                errMsg: 'removeStorage:ok',
+            })
+        } catch ({ message }) {
+            fail && fail({ errMsg: message })
+        } finally {
+            complete && complete()
+        }
+    }
+
+    removeStorageSync (key) {
+        delete this.store[key]
+    }
+
     getStorageInfo ({
         fail,
         success,
@@ -99,6 +107,14 @@ export default class Wx {
             fail && fail({ errMsg: message })
         } finally {
             complete && complete()
+        }
+    }
+
+    getStorageInfoSync () {
+        return {
+            keys,
+            limitSize: 10240, // kb
+            currentSize: 0, // kb
         }
     }
 }

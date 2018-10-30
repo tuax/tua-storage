@@ -68,7 +68,7 @@ export default class Storage {
 
     /**
      * 清除非白名单中的所有缓存数据
-     * @param {Array} whiteList 白名单
+     * @param {String[]} whiteList 白名单
      * @return {Promise}
      */
     clear (whiteList = []) {
@@ -107,7 +107,7 @@ export default class Storage {
 
     /**
      * 删除数据，可传递数组或字符串或单对象(fullKey)
-     * @param {Array|String|Object} items
+     * @param {String[]|String|Object} items
      * @param {String|Object} items.prefix 数据前缀
      * @param {String} items.prefix.fullKey 完整的数据前缀
      * @return {Promise}
@@ -172,7 +172,7 @@ export default class Storage {
 
     /**
      * 清除 cache 中非白名单中的数据
-     * @param {Array} whiteList 白名单
+     * @param {String[]} whiteList 白名单
      */
     _clearFromCache (whiteList) {
         this._getKeysByWhiteList(whiteList)(Object.keys(this._cache))
@@ -262,7 +262,7 @@ export default class Storage {
 
         /**
          * 清除非白名单中的数据
-         * @param {Array} whiteList 白名单
+         * @param {String[]} whiteList 白名单
          * @return {Promise}
          */
         const _clear = (whiteList) => (
@@ -316,7 +316,7 @@ export default class Storage {
 
         /**
          * 清除非白名单中的数据
-         * @param {Array} whiteList 白名单
+         * @param {String[]} whiteList 白名单
          * @return {Promise}
          */
         const _clear = (whiteList) => {
@@ -348,7 +348,7 @@ export default class Storage {
         const _setItem = (key, data) => promisify(setItem)(key, stringify(data))
         /**
          * 返回 localStorage 中的所有 key
-         * @return {Array} keys
+         * @return {String[]} keys
          */
         const _getAllKeys = () => {
             const { key: keyFn, length } = this.SE
@@ -398,7 +398,7 @@ export default class Storage {
 
         /**
          * 清除非白名单中的数据
-         * @param {Array} whiteList 白名单
+         * @param {String[]} whiteList 白名单
          * @return {Promise}
          */
         const _clear = (whiteList) => (
@@ -509,7 +509,7 @@ export default class Storage {
 
     /**
      * 获取过滤白名单后的 keys
-     * @param {Array} whiteList 白名单
+     * @param {String[]} whiteList 白名单
      * @return {Function}
      */
     _getKeysByWhiteList (whiteList) {
