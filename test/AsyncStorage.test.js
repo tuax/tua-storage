@@ -1,7 +1,7 @@
 import AsyncStorageCls from 'mock-async-storage'
 
 import TuaStorage from '../src/'
-import { DEFAULT_KEY_PREFIX } from '../src/constants'
+import { ERROR_MSG, DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
     getObjLen,
@@ -171,5 +171,29 @@ describe('save/load/remove', () => {
                 expect(store.size).toBe(1)
                 expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
             })
+    })
+
+    test('get storage info', () => (
+        tuaStorage
+            .save({ key, data })
+            .then(tuaStorage.getInfo.bind(tuaStorage))
+            .then(({ keys }) => {
+                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+            })
+    ))
+})
+
+describe('error handling', () => {
+    afterEach(() => {
+        cache = tuaStorage._cache = {}
+        AsyncStorage.clear()
+    })
+
+    test('throw error when invoke sync methods', () => {
+        expect(() => tuaStorage.clearSync()).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.saveSync({ key, data })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.loadSync({ key })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.removeSync({ key })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.getInfoSync({ key })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
     })
 })

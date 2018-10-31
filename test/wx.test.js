@@ -220,11 +220,14 @@ describe('save/load/clear/remove/getInfo', () => {
     })
 
     test('get storage info', () => (
-        tuaStorage.getInfo().then(({ keys, limitSize, currentSize }) => {
-            expect(keys).toEqual([])
-            expect(limitSize).toEqual(10240)
-            expect(currentSize).toEqual(0)
-        })
+        tuaStorage
+            .save({ key, data })
+            .then(tuaStorage.getInfo.bind(tuaStorage))
+            .then(({ keys, limitSize, currentSize }) => {
+                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+                expect(limitSize).toEqual(10240)
+                expect(currentSize).toEqual(0)
+            })
     ))
 })
 

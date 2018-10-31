@@ -20,17 +20,10 @@ import {
 } from './utils'
 import {
     ERROR_MSG,
+    SE_ERROR_MSG,
     DEFAULT_EXPIRES,
     DEFAULT_KEY_PREFIX,
 } from './constants'
-
-const SE_ERROR_MSG = `There is NO valid storageEngine specified!
-Please use:
-* wx (for miniprogram),
-* localStorage (for web),
-* AsyncStorage (for React Native)
-as the storageEngine...
-Otherwise data would be saved in cache(Memory) and lost after reload...`
 
 logger.log(`Version: ${version}`)
 
@@ -335,44 +328,29 @@ export default class TuaStorage {
         } = this.SE
 
         const bindFnToSE = fn => fn.bind(this.SE)
+        const throwSyncError = () => {
+            throw Error(ERROR_MSG.SYNC_METHOD)
+        }
 
-        /**
-         * 清除非白名单中的数据
-         * @param {String[]} whiteList 白名单
-         * @return {Promise}
-         */
         const _clear = (whiteList) => (
             _getAllKeys()
                 .then(this._getKeysByWhiteList(whiteList))
                 .then(bindFnToSE(multiRemove))
                 .catch(logger.error)
         )
-        /**
-         * 适配 AsyncStorage 读取数据
-         * @param {String} key
-         * @return {Promise}
-         */
         const _getItem = bindFnToSE(getItem)
-        /**
-         * 适配 AsyncStorage 保存数据
-         * @param {String} key
-         * @param {String} data
-         * @return {Promise}
-         */
         const _setItem = bindFnToSE(setItem)
-        /**
-         * 返回 AsyncStorage 中的所有 key
-         * @return {Promise}
-         */
+        const _getInfo = () => _getAllKeys().then(keys => ({ keys }))
         const _getAllKeys = bindFnToSE(getAllKeys)
-        /**
-         * 适配 AsyncStorage 删除单条数据
-         * @param {String} key
-         * @return {Promise}
-         */
         const _removeItem = bindFnToSE(removeItem)
 
-        return { _clear, _getItem, _setItem, _getAllKeys, _removeItem }
+        const _clearSync = throwSyncError
+        const _getItemSync = throwSyncError
+        const _setItemSync = throwSyncError
+        const _getInfoSync = throwSyncError
+        const _removeItemSync = throwSyncError
+
+        return { _clear, _getItem, _setItem, _getInfo, _getAllKeys, _removeItem, _clearSync, _getItemSync, _setItemSync, _getInfoSync, _removeItemSync }
     }
 
     /**
