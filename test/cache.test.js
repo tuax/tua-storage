@@ -1,4 +1,4 @@
-import TuaStorage from '../src/storage'
+import TuaStorage from '../src/'
 import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/constants'
 import {
     TIME_OUT,

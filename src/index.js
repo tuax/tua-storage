@@ -1,6 +1,6 @@
 /**
  * @file: 使用 Promise 封装存储层，对外暴露以下方法：
- *   1.构造函数：初始化 storage，建议挂载到全局变量上
+ *   1.构造函数：初始化 TuaStorage，建议挂载到全局变量上
  *   2.save：保存函数
  *   3.load：读取函数
  *   4.remove：删除函数
@@ -40,7 +40,7 @@ const pRej = Promise.reject.bind(Promise)
 const pRes = Promise.resolve.bind(Promise)
 const stringify = JSON.stringify.bind(JSON)
 
-export default class Storage {
+export default class TuaStorage {
     constructor ({
         syncFnMap = {},
         whiteList = [],

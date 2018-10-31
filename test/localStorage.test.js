@@ -1,4 +1,4 @@
-import TuaStorage from '../src/storage'
+import TuaStorage from '../src/'
 import { DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,

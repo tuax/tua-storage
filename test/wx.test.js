@@ -1,6 +1,6 @@
 import wxCls from './wxMock'
 
-import Storage from '../src/storage'
+import TuaStorage from '../src/'
 import {
     TIME_OUT,
     getObjLen,
@@ -12,7 +12,7 @@ import { DEFAULT_KEY_PREFIX } from '../src/constants'
 
 const wx = new wxCls()
 
-const tuaStorage = new Storage({
+const tuaStorage = new TuaStorage({
     storageEngine: wx,
     defaultExpires: expireTime,
 })
@@ -31,7 +31,7 @@ describe('timers', () => {
     jest.useFakeTimers()
 
     // 专门用于测试时间相关的实例
-    const tuaStorage = new Storage({
+    const tuaStorage = new TuaStorage({
         storageEngine: localStorage,
     })
     let cache = tuaStorage._cache

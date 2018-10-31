@@ -1,6 +1,6 @@
 import AsyncStorageCls from 'mock-async-storage'
 
-import Storage from '../src/storage'
+import TuaStorage from '../src/'
 import { DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
@@ -12,7 +12,7 @@ import {
 
 const AsyncStorage = new AsyncStorageCls()
 
-const tuaStorage = new Storage({
+const tuaStorage = new TuaStorage({
     storageEngine: AsyncStorage,
     defaultExpires: expireTime,
 })
@@ -29,7 +29,7 @@ describe('timers', () => {
     jest.useFakeTimers()
 
     // 专门用于测试时间相关的实例
-    let tuaStorage = new Storage({
+    let tuaStorage = new TuaStorage({
         storageEngine: AsyncStorage,
     })
     let cache = tuaStorage._cache
