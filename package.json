@@ -1,6 +1,6 @@
 {
     "name": "tua-storage",
-    "version": "1.4.2",
+    "version": "1.5.0",
     "description": "A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
     "main": "dist/umd.js",
     "module": "dist/es.js",

@@ -1,5 +1,4 @@
 import { ERROR_MSG } from './constants'
-import { pAll, pRej, pRes } from './utils'
 
 /**
  * 生成装饰器的辅助函数
@@ -24,7 +23,7 @@ const checkKey = getDecorator((method) =>
         const { key = '', fullKey = '' } = paramsObj
 
         if (key === '' && fullKey === '') {
-            return pRej(Error(ERROR_MSG.KEY))
+            return Promise.reject(Error(ERROR_MSG.KEY))
         }
 
         return method.call(this, params)
@@ -63,7 +62,7 @@ const supportArrayParam = (isAsync = true) => getDecorator((method) =>
 
         const mapResult = items.map(item => method.call(this, item))
 
-        return isAsync ? pAll(mapResult) : mapResult
+        return isAsync ? Promise.all(mapResult) : mapResult
     }
 )
 
@@ -81,7 +80,7 @@ const getDataToSave = getDecorator((method) =>
     }) {
         const isNeverExpired = this._isNeverExpired(expires)
 
-        if (!isNeverExpired && expires <= 0) return pRes()
+        if (!isNeverExpired && expires <= 0) return Promise.resolve()
 
         const realExpires = isNeverExpired
             // 永不超时
