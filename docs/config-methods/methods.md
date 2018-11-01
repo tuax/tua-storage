@@ -48,7 +48,7 @@ tuaStorage
 ```js
 tuaStorage.save({
     key: 'data key',
-    data: { foo: 'bar },
+    data: { foo: 'bar' },
     expires: 3600,
     syncParams: { a: 'a', b: '中文' },
 })
@@ -71,7 +71,7 @@ tuaStorage.save({
 ```js
 tuaStorage.save({
     fullKey: 'data key',
-    data: { foo: 'bar },
+    data: { foo: 'bar' },
 })
 
 // 保存到 storage 中的数据大概长这样
@@ -99,7 +99,7 @@ tuaStorage.save({
 ```js
 tuaStorage.save([{
     key: 'data key',
-    data: { foo: 'bar },
+    data: { foo: 'bar' },
     expires: 3600,
     syncParams: { a: 'a', b: '中文' },
 }, {
