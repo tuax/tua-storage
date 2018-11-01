@@ -1,10 +1,20 @@
 /**
- * @file: 使用 Promise 封装存储层，对外暴露以下方法：
- *   1.构造函数：初始化 TuaStorage，建议挂载到全局变量上
- *   2.save：保存函数
- *   3.load：读取函数
- *   4.remove：删除函数
- *   5.clear：清除函数
+ * @file: 对外暴露以下方法：
+ *   1.构造函数：用于初始化 TuaStorage，建议将实例挂载到全局变量上
+ *
+ * 异步函数，返回 Promise
+ *   2.save: 保存函数
+ *   3.load: 读取函数
+ *   4.clear: 清除函数
+ *   5.remove: 删除函数
+ *   6.getInfo: 获取信息函数
+ *
+ * 同步函数
+ *   7.saveSync: 保存函数
+ *   8.loadSync: 读取函数
+ *   9.clearSync: 清除函数
+ *   10.removeSync: 删除函数
+ *   11.getInfoSync: 获取信息函数
  */
 
 import { version } from '../package.json'
@@ -62,115 +72,6 @@ export default class TuaStorage {
     /* -- 各种对外暴露方法 -- */
 
     /**
-     * 异步清除非白名单中的所有缓存数据
-     * @param {String[]} whiteList 白名单
-     * @return {Promise}
-     */
-    clear (whiteList = []) {
-        // 首先清除缓存
-        this._clearFromCache(whiteList)
-
-        return this.SEMap._clear(whiteList)
-    }
-
-    /**
-     * 同步清除非白名单中的所有缓存数据
-     * @param {String[]} whiteList 白名单
-     * @return {Promise}
-     */
-    clearSync (whiteList = []) {
-        // 首先清除缓存
-        this._clearFromCache(whiteList)
-
-        return this.SEMap._clearSync(whiteList)
-    }
-
-    /**
-     * 异步读取数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {Function} items.syncFn 同步数据的方法
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @param {Number} items.expires 超时时间（单位：秒）
-     * @param {Boolean} items.isAutoSave 是否自动保存
-     * @param {Boolean} items.isEnableCache 是否使用内存缓存
-     * @param {Boolean} items.isForceUpdate 是否直接调用 syncFn
-     * @return {Promise}
-     */
-    @supportArrayParam()
-    @checkKey
-    @getFullKey
-    load ({
-        key,
-        prefix,
-        syncFn = this.syncFnMap[prefix],
-        syncParams,
-        ...rest
-    }) {
-        return this._findData({ key, syncFn, syncParams, ...rest })
-    }
-
-    /**
-     * 同步读取数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @return {Promise}
-     */
-    @supportArrayParam(false)
-    @checkKey
-    @getFullKey
-    loadSync ({ key }) {
-        const loadedData = this.SEMap._getItemSync(key)
-
-        return loadedData && loadedData.rawData
-    }
-
-    /**
-     * 异步删除数据，可传递数组或字符串或单对象(fullKey)
-     * @param {String[]|String|Object} items
-     * @param {String|Object} items.prefix 数据前缀
-     * @param {String} items.prefix.fullKey 完整的数据前缀
-     * @return {Promise}
-     */
-    @supportArrayParam()
-    @checkKey
-    remove (prefix) {
-        const fullKey = typeof prefix === 'object'
-            ? prefix.fullKey
-            : ''
-
-        const key = fullKey || this.storageKeyPrefix + prefix
-
-        delete this._cache[key]
-
-        return this.SEMap._removeItem(key)
-    }
-
-    /**
-     * 同步删除数据，可传递数组或字符串或单对象(fullKey)
-     * @param {String[]|String|Object} items
-     * @param {String|Object} items.prefix 数据前缀
-     * @param {String} items.prefix.fullKey 完整的数据前缀
-     * @return {Promise}
-     */
-    @supportArrayParam()
-    @checkKey
-    removeSync (prefix) {
-        const fullKey = typeof prefix === 'object'
-            ? prefix.fullKey
-            : ''
-
-        const key = fullKey || this.storageKeyPrefix + prefix
-
-        delete this._cache[key]
-
-        return this.SEMap._removeItemSync(key)
-    }
-
-    /**
      * 异步保存数据，可传递数组或单对象
      * @param {Array|Object} items
      * @param {String} items.key 前缀
@@ -217,11 +118,132 @@ export default class TuaStorage {
         dataToSave,
         isEnableCache = true,
     }) {
-        if (isEnableCache) {
-            this._cache[key] = dataToSave
+        try {
+            if (isEnableCache) {
+                this._cache[key] = dataToSave
+            }
+
+            this.SEMap._setItemSync(key, dataToSave)
+        } catch (err) {
+            delete this._cache[key]
+
+            throw err
+        }
+    }
+
+    /**
+     * 异步读取数据，可传递数组或单对象
+     * @param {Array|Object} items
+     * @param {String} items.key 前缀
+     * @param {Function} items.syncFn 同步数据的方法
+     * @param {String} items.fullKey 完整关键词
+     * @param {Object} items.syncParams 同步参数对象
+     * @param {Number} items.expires 超时时间（单位：秒）
+     * @param {Boolean} items.isAutoSave 是否自动保存
+     * @param {Boolean} items.isEnableCache 是否使用内存缓存
+     * @param {Boolean} items.isForceUpdate 是否直接调用 syncFn
+     * @return {Promise}
+     */
+    @supportArrayParam()
+    @checkKey
+    @getFullKey
+    load ({
+        key,
+        prefix,
+        syncFn = this.syncFnMap[prefix],
+        syncParams,
+        ...rest
+    }) {
+        return this._findData({ key, syncFn, syncParams, ...rest })
+    }
+
+    /**
+     * 同步读取数据，可传递数组或单对象
+     * @param {Array|Object} items
+     * @param {String} items.key 前缀
+     * @param {String} items.fullKey 完整关键词
+     * @param {Object} items.syncParams 同步参数对象
+     * @return {Promise}
+     */
+    @supportArrayParam(false)
+    @checkKey
+    @getFullKey
+    loadSync ({ key, isEnableCache = true }) {
+        const cacheData = this._cache[key]
+
+        if (isEnableCache && cacheData) {
+            const { expires, rawData } = jsonParse(cacheData)
+            if (!this._isDataExpired({ expires })) return rawData
         }
 
-        this.SEMap._setItemSync(key, dataToSave)
+        const loadedData = this.SEMap._getItemSync(key)
+        if (!loadedData) return undefined
+
+        const { expires, rawData } = loadedData
+        if (!this._isDataExpired({ expires })) return rawData
+    }
+
+    /**
+     * 异步清除非白名单中的所有缓存数据
+     * @param {String[]} whiteList 白名单
+     * @return {Promise}
+     */
+    clear (whiteList = []) {
+        // 首先清除缓存
+        this._clearFromCache(whiteList)
+
+        return this.SEMap._clear(whiteList)
+    }
+
+    /**
+     * 同步清除非白名单中的所有缓存数据
+     * @param {String[]} whiteList 白名单
+     * @return {Promise}
+     */
+    clearSync (whiteList = []) {
+        // 首先清除缓存
+        this._clearFromCache(whiteList)
+
+        this.SEMap._clearSync(whiteList)
+    }
+
+    /**
+     * 异步删除数据，可传递数组或字符串或单对象(fullKey)
+     * @param {String[]|String|Object} items
+     * @param {String|Object} items.prefix 数据前缀
+     * @param {String} items.prefix.fullKey 完整的数据前缀
+     * @return {Promise}
+     */
+    @supportArrayParam()
+    @checkKey
+    remove (prefix) {
+        const fullKey = typeof prefix === 'object'
+            ? prefix.fullKey
+            : ''
+
+        const key = fullKey || this.storageKeyPrefix + prefix
+        delete this._cache[key]
+
+        return this.SEMap._removeItem(key)
+    }
+
+    /**
+     * 同步删除数据，可传递数组或字符串或单对象(fullKey)
+     * @param {String[]|String|Object} items
+     * @param {String|Object} items.prefix 数据前缀
+     * @param {String} items.prefix.fullKey 完整的数据前缀
+     * @return {Promise}
+     */
+    @supportArrayParam()
+    @checkKey
+    removeSync (prefix) {
+        const fullKey = typeof prefix === 'object'
+            ? prefix.fullKey
+            : ''
+        const key = fullKey || this.storageKeyPrefix + prefix
+
+        delete this._cache[key]
+        this.SEMap._removeItemSync(key)
     }
 
     /**
@@ -242,12 +264,18 @@ export default class TuaStorage {
 
     /* -- 各种私有方法 -- */
 
+    _getAllCacheKeys () {
+        return Object.keys(this._cache)
+    }
+
     /**
      * 清除 cache 中非白名单中的数据
      * @param {String[]} whiteList 白名单
      */
     _clearFromCache (whiteList) {
-        this._getKeysByWhiteList(whiteList)(Object.keys(this._cache))
+        const allCacheKeys = this._getAllCacheKeys()
+
+        this._getKeysByWhiteList(whiteList)(allCacheKeys)
             .forEach(key => { delete this._cache[key] })
     }
 
@@ -255,7 +283,7 @@ export default class TuaStorage {
      * 清除 cache 中已过期的数据
      */
     _clearExpiredDataFromCache () {
-        Object.keys(this._cache)
+        this._getAllCacheKeys()
             .filter(key => this._isDataExpired(this._cache[key]))
             .map(key => { delete this._cache[key] })
     }
@@ -340,9 +368,9 @@ export default class TuaStorage {
         )
         const _getItem = bindFnToSE(getItem)
         const _setItem = bindFnToSE(setItem)
-        const _getInfo = () => _getAllKeys().then(keys => ({ keys }))
         const _getAllKeys = bindFnToSE(getAllKeys)
         const _removeItem = bindFnToSE(removeItem)
+        const _getInfo = () => _getAllKeys().then(keys => ({ keys }))
 
         const _clearSync = throwSyncError
         const _getItemSync = throwSyncError
@@ -358,26 +386,14 @@ export default class TuaStorage {
      * @return {Object}
      */
     _formatMethodsByLS () {
-        const {
-            getItem,
-            setItem,
-            removeItem,
-        } = this.SE
+        const { getItem, setItem, removeItem } = this.SE
 
         const promisify = (fn) => (...args) => pRes(
             fn.apply(this.SE, args)
         )
 
-        /**
-         * 清除非白名单中的数据
-         * @param {String[]} whiteList 白名单
-         * @return {Promise}
-         */
         const _clear = (whiteList) => {
-            const mergedWhiteList = [
-                ...whiteList,
-                ...this.whiteList,
-            ]
+            const mergedWhiteList = [ ...whiteList, ...this.whiteList ]
             const isNotInWhiteList = key => mergedWhiteList
                 .every(item => !key.includes(item))
 
@@ -387,43 +403,35 @@ export default class TuaStorage {
                 .then(pAll)
                 .catch(logger.error)
         }
-        /**
-         * 适配 localStorage 读取数据
-         * @param {String} key
-         * @return {Promise}
-         */
         const _getItem = promisify(getItem)
-        /**
-         * 适配 localStorage 保存数据
-         * @param {String} key
-         * @param {String} data
-         * @return {Promise}
-         */
         const _setItem = (key, data) => promisify(setItem)(key, stringify(data))
-        /**
-         * 返回 localStorage 中的所有 key
-         * @return {String[]} keys
-         */
-        const _getAllKeys = () => {
+        const _getAllKeys = () => pRes(_getAllKeysSync())
+        const _removeItem = promisify(removeItem)
+        const _getInfo = () => ({ keys: _getAllKeysSync() })
+
+        const _clearSync = (whiteList) => {
+            const allKeys = _getAllKeysSync()
+
+            this._getKeysByWhiteList(whiteList)(allKeys)
+                .map(_removeItemSync)
+        }
+        const _getItemSync = (key) => jsonParse(this.SE.getItem(key))
+        const _setItemSync = (key, data) => this.SE.setItem(key, stringify(data))
+        const _getInfoSync = () => ({ keys: _getAllKeysSync() })
+        const _removeItemSync = removeItem.bind(this.SE)
+        const _getAllKeysSync = () => {
             const { key: keyFn, length } = this.SE
             const keys = []
 
             for (let i = 0, len = length; i < len; i++) {
                 const key = keyFn.call(this.SE, i)
-
                 keys.push(key)
             }
 
-            return pRes(keys)
+            return keys
         }
-        /**
-         * 适配 localStorage 删除单条数据
-         * @param {String} key
-         * @return {Promise}
-         */
-        const _removeItem = promisify(removeItem)
 
-        return { _clear, _getItem, _setItem, _getAllKeys, _removeItem }
+        return { _clear, _getItem, _getInfo, _setItem, _getAllKeys, _removeItem, _clearSync, _getItemSync, _setItemSync, _getInfoSync, _removeItemSync }
     }
 
     /**
@@ -473,7 +481,7 @@ export default class TuaStorage {
         const _getAllKeysSync = () => _getInfoSync().keys
         const _removeItemSync = this.SE.removeStorageSync
 
-        return { _clear, _setItem, _getItem, _getInfo, _getAllKeys, _removeItem, _setItemSync, _getItemSync, _getInfoSync, _removeItemSync, _clearSync }
+        return { _clear, _setItem, _getItem, _getInfo, _getAllKeys, _removeItem, _clearSync, _setItemSync, _getItemSync, _getInfoSync, _removeItemSync }
     }
 
     /**
@@ -481,13 +489,22 @@ export default class TuaStorage {
      * @return {Object | Null}
      */
     _getFormatedSE () {
+        const noop = () => {}
+        const _getInfoSync = () => ({ keys: this._getAllCacheKeys() })
+
         const defaultSEMap = {
             _clear: pRes,
             _setItem: pRes,
             _getItem: pRes,
-            _getInfo: pRes,
+            _getInfo: () => pRes(_getInfoSync()),
             _getAllKeys: () => pRes([]),
             _removeItem: pRes,
+
+            _clearSync: noop,
+            _getInfoSync,
+            _getItemSync: noop,
+            _setItemSync: noop,
+            _removeItemSync: noop,
         }
 
         // 未指定存储引擎
@@ -626,14 +643,17 @@ export default class TuaStorage {
 
             if (!isPromise) return pRej(Error(ERROR_MSG.PROMISE))
 
+            // 格式化数据结构
+            const formatDataStructure = (data) => (data.code == null && data.data == null)
+                ? { data }
+                : data
+
+            // 格式化数据类型
+            const formatDataType = ({ code = 0, data }) => ({ code: +code, data })
+
             const task = originTask
-                // 格式化数据结构
-                .then(data => (data.code == null && data.data == null)
-                    ? { data }
-                    : data
-                )
-                // 格式化数据类型
-                .then(({ code = 0, data }) => ({ code: +code, data }))
+                .then(formatDataStructure)
+                .then(formatDataType)
                 .then(({ code, data }) => {
                     // 应该首先删除任务
                     finallyRemoveTask()
@@ -645,7 +665,7 @@ export default class TuaStorage {
                         key: key.replace(this.storageKeyPrefix, ''),
                         data: { code, data },
                         expires,
-                    }).catch(logger.warn)
+                    }).catch(logger.error)
 
                     return { code, data }
                 })
@@ -656,7 +676,7 @@ export default class TuaStorage {
             return task
         }
 
-        const syncRejectFn = () => pRej(new Error(stringify({ key, syncFn })))
+        const syncRejectFn = () => pRej(Error(stringify({ key, syncFn })))
 
         // 没有缓存数据，直接调用方法同步数据
         if (isNoCacheData) {

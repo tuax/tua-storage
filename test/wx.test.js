@@ -250,6 +250,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
             { key, data: '+1s', expires: 10, isEnableCache: false },
             { key, data: 1217, isEnableCache: false },
             { key, data, isEnableCache: false },
+            { fullKey: 'cache key', data, isEnableCache: true },
         ]
         const targetKey = getTargetKey(key)
         const expectedVal = getExpectedVal(data)
@@ -263,11 +264,12 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
             expect(loadedItem).toBe(data)
 
             // cache
-            expect(getObjLen(cache)).toBe(0)
+            expect(getObjLen(cache)).toBe(1)
             expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+            expect(JSON.stringify(cache['cache key'])).toEqual(expectedVal)
 
             // storage
-            expect(wx._length).toBe(1)
+            expect(wx._length).toBe(2)
             expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
         })
     })
@@ -327,10 +329,12 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
         })
     })
 
-    test('get storage info', () => {
+    test('get storage info sync', () => {
+        tuaStorage.saveSync({ key, data })
+
         const { keys, limitSize, currentSize } = tuaStorage.getInfoSync()
 
-        expect(keys).toEqual([])
+        expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
         expect(limitSize).toEqual(10240)
         expect(currentSize).toEqual(0)
     })

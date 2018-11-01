@@ -204,7 +204,7 @@ load 方法的同步版本，在不支持同步方法的场景（AsyncStorage）
 
 ```js
 try {
-    const { code, data } = tuaStorage.loadSync({
+    const data = tuaStorage.loadSync({
         key,
         expires,
         fullKey,

@@ -95,7 +95,7 @@ tuaStorage.clear()
 
 让我们回归这件事的【**初心**】：我仅仅需要获取这个数据！我不管它是来自存储层、来自接口数据、还是来自其他什么地方...
 
-### 同步函数
+### 数据同步函数
 因此 `tua-storage` 在读取数据时很贴心地提供了一个 `syncFn` 参数，作为数据同步的函数，当请求的数据不存在或已过期时自动调用该函数。并且数据同步后默认会保存下来，这样下次再请求时存储层中就有数据了。
 
 ```js
@@ -109,7 +109,7 @@ tuaStorage.load({
 
 这么一来，存储层就和接口层对接起来了。业务测再也不用手动调用 api 获取数据。
 
-### 合并配置
+### 合并分散配置
 每次读取数据时如果都要手动传同步函数，实际编码时还是很麻烦...
 
 > 不急，吃口药~
@@ -142,6 +142,7 @@ import TuaStorage from 'tua-storage'
 // 小程序端要引入 'tua-api/dist/mp'
 import { getSyncFnMapByApis } from 'tua-api'
 
+// 本地写好的各种接口配置
 import * as apis from '@/apis'
 
 const tuaStorage = new TuaStorage({

@@ -17,11 +17,10 @@ export const getTargetKey = (prefix, syncParams = {}) =>
         : `${prefix}?${getParamStrFromObj(syncParams)}`
     )
 
-export const getExpectedVal =
-    (rawData, et = expireTime) => JSON.stringify({
-        rawData,
-        expires: parseInt(Date.now() / 1000) + et,
-    })
+export const getExpectedVal =(rawData, et = expireTime) => JSON.stringify({
+    rawData,
+    expires: parseInt(Date.now() / 1000) + et,
+})
 
 export const getExpectedValBySyncFn = (rawData, et = expireTime) => JSON.stringify({
     rawData: { code: 0, data: rawData },
