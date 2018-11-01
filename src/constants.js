@@ -16,3 +16,16 @@ export const SE_ERROR_MSG =
     `* AsyncStorage (for React Native)` +
     `as the storageEngine...` +
     `Otherwise data would be saved in cache(Memory) and lost after reload...`
+
+// storageEngine 需要实现的方法
+export const REQUIRED_SE_METHODS = {
+    wx: [
+        'setStorage',
+        'getStorage',
+        'removeStorage',
+        'getStorageInfo',
+        'getStorageInfoSync',
+    ],
+    ls: ['getItem', 'setItem', 'removeItem'],
+    as: ['getItem', 'setItem', 'multiRemove'],
+}

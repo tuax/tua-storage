@@ -3,6 +3,7 @@ import wxCls from './wxMock'
 import TuaStorage from '../src/'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -84,7 +85,7 @@ describe('initial state', () => {
     test('clean initial expired data', () => {
         wx.store = {
             [`${DEFAULT_KEY_PREFIX}1`]: getExpectedVal(data, -10),
-            [`${DEFAULT_KEY_PREFIX}2`]: JSON.stringify({}),
+            [`${DEFAULT_KEY_PREFIX}2`]: stringify({}),
             [`${DEFAULT_KEY_PREFIX}3`]: 'abc',
             [`${DEFAULT_KEY_PREFIX}4`]: getExpectedVal(data, 10),
         }
@@ -152,11 +153,11 @@ describe('save/load/clear/remove/getInfo', () => {
 
                     // cache
                     expect(getObjLen(cache)).toBe(0)
-                    expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+                    expect(stringify(cache[targetKey])).toBeUndefined()
 
                     // storage
                     expect(wx._length).toBe(1)
-                    expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                    expect(stringify(store[targetKey])).toBe(expectedVal)
                 })
             })
     })
@@ -172,11 +173,11 @@ describe('save/load/clear/remove/getInfo', () => {
             .then(() => {
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(wx._length).toBe(1)
-                expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                expect(stringify(store[targetKey])).toBe(expectedVal)
             })
     })
 
@@ -204,16 +205,16 @@ describe('save/load/clear/remove/getInfo', () => {
                     // cache
                     expect(getObjLen(cache)).toBe(whiteList.length)
                     isInWhiteList
-                        ? expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                        ? expect(stringify(cache[targetKey])).toBe(expectedVal)
                         : expect(cache[targetKey]).toBeUndefined()
 
                     // storage
                     expect(wx._length).toBe(whiteList.length)
 
                     if (isInWhiteList) {
-                        expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                        expect(stringify(store[targetKey])).toBe(expectedVal)
                     } else {
-                        expect(JSON.stringify(store[targetKey])).toBeUndefined()
+                        expect(stringify(store[targetKey])).toBeUndefined()
                     }
                 })
             })
@@ -265,12 +266,12 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
 
             // cache
             expect(getObjLen(cache)).toBe(1)
-            expect(JSON.stringify(cache[targetKey])).toBeUndefined()
-            expect(JSON.stringify(cache['cache key'])).toEqual(expectedVal)
+            expect(stringify(cache[targetKey])).toBeUndefined()
+            expect(stringify(cache['cache key'])).toEqual(expectedVal)
 
             // storage
             expect(wx._length).toBe(2)
-            expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+            expect(stringify(store[targetKey])).toBe(expectedVal)
         })
     })
 
@@ -284,11 +285,11 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
 
         // cache
         expect(getObjLen(cache)).toBe(1)
-        expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
 
         // storage
         expect(wx._length).toBe(1)
-        expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+        expect(stringify(store[targetKey])).toBe(expectedVal)
     })
 
     test('clear some items by whiteList', () => {
@@ -315,16 +316,16 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
             // cache
             expect(getObjLen(cache)).toBe(whiteList.length)
             isInWhiteList
-                ? expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                ? expect(stringify(cache[targetKey])).toBe(expectedVal)
                 : expect(cache[targetKey]).toBeUndefined()
 
             // storage
             expect(wx._length).toBe(whiteList.length)
 
             if (isInWhiteList) {
-                expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                expect(stringify(store[targetKey])).toBe(expectedVal)
             } else {
-                expect(JSON.stringify(store[targetKey])).toBeUndefined()
+                expect(stringify(store[targetKey])).toBeUndefined()
             }
         })
     })

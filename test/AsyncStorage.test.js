@@ -4,6 +4,7 @@ import TuaStorage from '../src/'
 import { ERROR_MSG, DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -81,7 +82,7 @@ describe('initial state', () => {
         Promise
             .all([
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10)),
-                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, JSON.stringify({})),
+                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({})),
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc'),
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10)),
             ])
@@ -145,11 +146,11 @@ describe('save/load/remove', () => {
 
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(store.size).toBe(1)
-                expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
+                expect(stringify(store.get(targetKey))).toBe(expectedVal)
             })
     })
 
@@ -165,11 +166,11 @@ describe('save/load/remove', () => {
 
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(store.size).toBe(1)
-                expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
+                expect(stringify(store.get(targetKey))).toBe(expectedVal)
             })
     })
 

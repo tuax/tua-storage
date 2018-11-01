@@ -2,6 +2,7 @@ import TuaStorage from '../src/'
 import { DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -89,7 +90,7 @@ describe('initial state', () => {
 
     test('clean initial expired data', () => {
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10))
-        localStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, JSON.stringify({}))
+        localStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({}))
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc')
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10))
 
@@ -98,6 +99,17 @@ describe('initial state', () => {
                 expect(getObjLen(store)).toBe(3)
                 expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeUndefined()
             })
+    })
+
+    test('disable auto clean initial expired data', () => {
+        localStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10))
+        localStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({}))
+        localStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc')
+        localStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10))
+        new TuaStorage({ isEnableAutoClear: false })
+
+        expect(getObjLen(store)).toBe(4)
+        expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeDefined()
     })
 
     test('clear items not match prefix', () => {
@@ -149,7 +161,7 @@ describe('save/load/clear/remove', () => {
 
             // cache
             expect(getObjLen(cache)).toBe(1)
-            expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+            expect(stringify(cache[targetKey])).toBe(expectedVal)
 
             // storage
             expect(getObjLen(store)).toBe(1)
@@ -188,7 +200,7 @@ describe('save/load/clear/remove', () => {
 
                     // cache
                     expect(getObjLen(cache)).toBe(0)
-                    expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+                    expect(stringify(cache[targetKey])).toBeUndefined()
 
                     // storage
                     expect(getObjLen(store)).toBe(1)
@@ -209,7 +221,7 @@ describe('save/load/clear/remove', () => {
             .then(() => {
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(getObjLen(store)).toBe(1)
@@ -245,7 +257,7 @@ describe('save/load/clear/remove', () => {
                     // cache
                     expect(getObjLen(cache)).toBe(whiteList.length)
                     isInWhiteList
-                        ? expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                        ? expect(stringify(cache[targetKey])).toBe(expectedVal)
                         : expect(cache[targetKey]).toBeUndefined()
 
                     // storage
@@ -293,9 +305,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
         ]
         const targetKey = getTargetKey(key)
         const expectedVal = getExpectedVal(data)
-
         tuaStorage.saveSync(dataArr)
-
         const loadedItems = tuaStorage.loadSync(dataArr)
 
         loadedItems.map((loadedItem) => {
@@ -304,7 +314,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
 
             // cache
             expect(getObjLen(cache)).toBe(0)
-            expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+            expect(stringify(cache[targetKey])).toBeUndefined()
 
             // storage
             expect(store.length).toBe(1)
@@ -322,7 +332,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
 
         // cache
         expect(getObjLen(cache)).toBe(1)
-        expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
 
         // storage
         expect(store.length).toBe(1)
@@ -339,9 +349,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
         ]
         const whiteList = ['3', '4', '5']
         const expectedValues = kdArr.map(({ data }) => getExpectedVal(data))
-
         kdArr.map(({ key, data }) => tuaStorage.saveSync({ key, data }))
-
         tuaStorage.clearSync(whiteList)
 
         kdArr.map(({ key }, idx) => {
@@ -353,7 +361,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
             // cache
             expect(getObjLen(cache)).toBe(whiteList.length)
             isInWhiteList
-                ? expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                ? expect(stringify(cache[targetKey])).toBe(expectedVal)
                 : expect(cache[targetKey]).toBeUndefined()
 
             // storage

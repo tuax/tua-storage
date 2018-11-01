@@ -2,6 +2,7 @@ import TuaStorage from '../src/'
 import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/constants'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     getTargetKey,
     getExpectedVal,
@@ -104,7 +105,7 @@ describe('timers', () => {
                 jest.advanceTimersByTime(TIME_OUT)
             }))
 
-        const str = JSON.stringify({ key: targetKey })
+        const str = stringify({ key: targetKey })
 
         expect(loadExpiredItemWithoutSyncFn)
             .rejects.toEqual(Error(str))
@@ -143,7 +144,7 @@ describe('error handling', () => {
     test('load one expired item without syncFn', () => {
         tuaStorage._cache[targetKey] = fakeVal
 
-    const str = JSON.stringify({ key: targetKey })
+    const str = stringify({ key: targetKey })
 
         expect(tuaStorage.load({ key, syncParams }))
             .rejects.toEqual(Error(str))
@@ -164,7 +165,7 @@ describe('error handling', () => {
             { key },
         ]
 
-        const str = JSON.stringify({ key: getTargetKey(key) })
+        const str = stringify({ key: getTargetKey(key) })
 
         expect(tuaStorage.load(dataArr))
             .rejects
@@ -227,13 +228,13 @@ describe('save/load/remove', () => {
             ])
             .then(() => tuaStorage.load({ fullKey }))
             .then(() => {
-                expect(JSON.stringify(cache[fullKey])).toBe(expectedVal)
+                expect(stringify(cache[fullKey])).toBe(expectedVal)
             })
             .then(() => tuaStorage.remove({ fullKey }))
             .then(() => {
                 expect(cache[fullKey]).toBeUndefined()
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[getTargetKey(fullKey)]))
+                expect(stringify(cache[getTargetKey(fullKey)]))
                     .toBe(expectedVal)
             })
     })
@@ -280,7 +281,7 @@ describe('save/load/remove', () => {
                     expect(code).toBe(66)
                     expect(loadedData).toBe(data)
                     expect(getObjLen(cache)).toBe(0)
-                    expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+                    expect(stringify(cache[targetKey])).toBeUndefined()
                 })
             })
     })
@@ -361,26 +362,24 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
         const targetKey = getTargetKey(key)
         const expectedVal = getExpectedVal(data, 30)
         tuaStorage.saveSync(dataArr)
-
         const [loadedItem, ...rest] = tuaStorage.loadSync(dataArr)
 
         expect(loadedItem).toBe(data)
         expect(rest).toEqual([undefined, undefined, undefined])
         expect(getObjLen(cache)).toBe(1)
-        expect(JSON.stringify(cache[targetKey])).toBeUndefined()
-        expect(JSON.stringify(cache['cache key'])).toEqual(expectedVal)
+        expect(stringify(cache[targetKey])).toBeUndefined()
+        expect(stringify(cache['cache key'])).toEqual(expectedVal)
     })
 
     test('remove some undefined items', () => {
         const keyArr = ['item key1', 'item key2', 'item key3']
         const targetKey = getTargetKey(key)
         const expectedVal = getExpectedVal(data, 30)
-
         tuaStorage.saveSync({ key, data })
         tuaStorage.removeSync(keyArr)
 
         expect(getObjLen(cache)).toBe(1)
-        expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
     })
 
     test('clear some items by whiteList', () => {
@@ -393,9 +392,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
         ]
         const whiteList = ['3', '4', '5']
         const expectedValues = kdArr.map(({ data }) => getExpectedVal(data, 30))
-
         kdArr.map(({ key, data }) => tuaStorage.saveSync({ key, data }))
-
         tuaStorage.clearSync(whiteList)
 
         kdArr.map(({ key }, idx) => {
@@ -406,7 +403,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
 
             expect(getObjLen(cache)).toBe(whiteList.length)
             isInWhiteList
-                ? expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                ? expect(stringify(cache[targetKey])).toBe(expectedVal)
                 : expect(cache[targetKey]).toBeUndefined()
         })
     })

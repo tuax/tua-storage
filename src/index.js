@@ -19,10 +19,14 @@
 
 import { version } from '../package.json'
 import {
+    pAll,
+    pRej,
+    pRes,
     logger,
     negate,
     checkKey,
     jsonParse,
+    stringify,
     getFullKey,
     getDataToSave,
     supportArrayParam,
@@ -33,40 +37,47 @@ import {
     SE_ERROR_MSG,
     DEFAULT_EXPIRES,
     DEFAULT_KEY_PREFIX,
+    REQUIRED_SE_METHODS,
 } from './constants'
+import formatMethodsByAS from './storageEngines/asyncStorage'
+import formatMethodsByLS from './storageEngines/localStorage'
+import formatMethodsByWX from './storageEngines/wxStorage'
 
 logger.log(`Version: ${version}`)
 
-// 缩写常用函数
-const pAll = Promise.all.bind(Promise)
-const pRej = Promise.reject.bind(Promise)
-const pRes = Promise.resolve.bind(Promise)
-const stringify = JSON.stringify.bind(JSON)
-
 export default class TuaStorage {
     constructor ({
-        syncFnMap = {},
         whiteList = [],
+        syncFnMap = Object.create(null),
         storageEngine = null, // 可传递 wx / localStorage / AsyncStorage
         defaultExpires = DEFAULT_EXPIRES,
+        neverExpireMark = null,
         storageKeyPrefix = DEFAULT_KEY_PREFIX,
+
+        // auto clear
+        autoClearTime = 60, // 默认1分钟，以秒为单位
+        isEnableAutoClear = true,
     } = {}) {
         this.SE = storageEngine
         this.taskList = []
         this.whiteList = whiteList
         this.syncFnMap = syncFnMap
         this.defaultExpires = defaultExpires
-        this.neverExpireMark = null // 永不超时的标志
+        this.neverExpireMark = neverExpireMark
         this.storageKeyPrefix = storageKeyPrefix
 
+        // 内存缓存
         this._cache = Object.create(null)
 
-        this.SEMap = this._getFormatedSE()
+        // 根据 SE 获取各种适配好的方法对象
+        this.SEMethods = this._getSEMethods()
 
-        const clearExpiredData = this._clearExpiredData.bind(this)
         // 轮询扫描缓存，清除过期数据
-        setTimeout(clearExpiredData, 0)
-        setInterval(clearExpiredData, 1000 * 60)
+        if (isEnableAutoClear) {
+            const clearExpiredData = this._clearExpiredData.bind(this)
+            setTimeout(clearExpiredData, 0)
+            setInterval(clearExpiredData, autoClearTime * 1000)
+        }
     }
 
     /* -- 各种对外暴露方法 -- */
@@ -95,7 +106,7 @@ export default class TuaStorage {
             this._cache[key] = dataToSave
         }
 
-        return this.SEMap._setItem(key, dataToSave)
+        return this.SEMethods._setItem(key, dataToSave)
     }
 
     /**
@@ -123,7 +134,7 @@ export default class TuaStorage {
                 this._cache[key] = dataToSave
             }
 
-            this.SEMap._setItemSync(key, dataToSave)
+            this.SEMethods._setItemSync(key, dataToSave)
         } catch (err) {
             delete this._cache[key]
 
@@ -176,9 +187,11 @@ export default class TuaStorage {
             if (!this._isDataExpired({ expires })) return rawData
         }
 
-        const loadedData = this.SEMap._getItemSync(key)
+        // 没有数据直接返回 undefined
+        const loadedData = this.SEMethods._getItemSync(key)
         if (!loadedData) return undefined
 
+        // 数据未过期才返回数据
         const { expires, rawData } = loadedData
         if (!this._isDataExpired({ expires })) return rawData
     }
@@ -192,7 +205,7 @@ export default class TuaStorage {
         // 首先清除缓存
         this._clearFromCache(whiteList)
 
-        return this.SEMap._clear(whiteList)
+        return this.SEMethods._clear(whiteList)
     }
 
     /**
@@ -203,8 +216,7 @@ export default class TuaStorage {
     clearSync (whiteList = []) {
         // 首先清除缓存
         this._clearFromCache(whiteList)
-
-        this.SEMap._clearSync(whiteList)
+        this.SEMethods._clearSync(whiteList)
     }
 
     /**
@@ -224,7 +236,7 @@ export default class TuaStorage {
         const key = fullKey || this.storageKeyPrefix + prefix
         delete this._cache[key]
 
-        return this.SEMap._removeItem(key)
+        return this.SEMethods._removeItem(key)
     }
 
     /**
@@ -243,7 +255,7 @@ export default class TuaStorage {
         const key = fullKey || this.storageKeyPrefix + prefix
 
         delete this._cache[key]
-        this.SEMap._removeItemSync(key)
+        this.SEMethods._removeItemSync(key)
     }
 
     /**
@@ -251,7 +263,7 @@ export default class TuaStorage {
      * @return {Promise}
      */
     getInfo () {
-        return this.SEMap._getInfo()
+        return this.SEMethods._getInfo()
     }
 
     /**
@@ -259,7 +271,7 @@ export default class TuaStorage {
      * @return {Promise}
      */
     getInfoSync () {
-        return this.SEMap._getInfoSync()
+        return this.SEMethods._getInfoSync()
     }
 
     /* -- 各种私有方法 -- */
@@ -292,7 +304,7 @@ export default class TuaStorage {
      * 清除已过期的数据
      */
     _clearExpiredData () {
-        const { _getItem, _getAllKeys, _removeItem } = this.SEMap
+        const { _getItem, _getAllKeys, _removeItem } = this.SEMethods
 
         // 清除 cache 中过期数据
         this._clearExpiredDataFromCache()
@@ -335,7 +347,7 @@ export default class TuaStorage {
             // 返回 cache 数据
             ? this._loadData({ key, cacheData, ...rest })
             // 读取 storage
-            : this.SEMap._getItem(key)
+            : this.SEMethods._getItem(key)
                 // 如果有缓存则返回 cacheData
                 .then(cacheData => this._loadData({ key, cacheData, ...rest }))
                 // 没有缓存则不传 cacheData，执行同步数据逻辑（请求接口等）
@@ -343,152 +355,10 @@ export default class TuaStorage {
     }
 
     /**
-     * 统一规范化 AsyncStorage 的各个方法
-     * @return {Object}
-     */
-    _formatMethodsByAS () {
-        const {
-            getItem,
-            setItem,
-            getAllKeys,
-            removeItem,
-            multiRemove,
-        } = this.SE
-
-        const bindFnToSE = fn => fn.bind(this.SE)
-        const throwSyncError = () => {
-            throw Error(ERROR_MSG.SYNC_METHOD)
-        }
-
-        const _clear = (whiteList) => (
-            _getAllKeys()
-                .then(this._getKeysByWhiteList(whiteList))
-                .then(bindFnToSE(multiRemove))
-                .catch(logger.error)
-        )
-        const _getItem = bindFnToSE(getItem)
-        const _setItem = bindFnToSE(setItem)
-        const _getAllKeys = bindFnToSE(getAllKeys)
-        const _removeItem = bindFnToSE(removeItem)
-        const _getInfo = () => _getAllKeys().then(keys => ({ keys }))
-
-        const _clearSync = throwSyncError
-        const _getItemSync = throwSyncError
-        const _setItemSync = throwSyncError
-        const _getInfoSync = throwSyncError
-        const _removeItemSync = throwSyncError
-
-        return { _clear, _getItem, _setItem, _getInfo, _getAllKeys, _removeItem, _clearSync, _getItemSync, _setItemSync, _getInfoSync, _removeItemSync }
-    }
-
-    /**
-     * 统一规范化 LocalStorage 的各个方法
-     * @return {Object}
-     */
-    _formatMethodsByLS () {
-        const { getItem, setItem, removeItem } = this.SE
-
-        const promisify = (fn) => (...args) => pRes(
-            fn.apply(this.SE, args)
-        )
-
-        const _clear = (whiteList) => {
-            const mergedWhiteList = [ ...whiteList, ...this.whiteList ]
-            const isNotInWhiteList = key => mergedWhiteList
-                .every(item => !key.includes(item))
-
-            return _getAllKeys()
-                .then(keys => keys.filter(isNotInWhiteList))
-                .then(keys => keys.map(k => _removeItem(k)))
-                .then(pAll)
-                .catch(logger.error)
-        }
-        const _getItem = promisify(getItem)
-        const _setItem = (key, data) => promisify(setItem)(key, stringify(data))
-        const _getAllKeys = () => pRes(_getAllKeysSync())
-        const _removeItem = promisify(removeItem)
-        const _getInfo = () => ({ keys: _getAllKeysSync() })
-
-        const _clearSync = (whiteList) => {
-            const allKeys = _getAllKeysSync()
-
-            this._getKeysByWhiteList(whiteList)(allKeys)
-                .map(_removeItemSync)
-        }
-        const _getItemSync = (key) => jsonParse(this.SE.getItem(key))
-        const _setItemSync = (key, data) => this.SE.setItem(key, stringify(data))
-        const _getInfoSync = () => ({ keys: _getAllKeysSync() })
-        const _removeItemSync = removeItem.bind(this.SE)
-        const _getAllKeysSync = () => {
-            const { key: keyFn, length } = this.SE
-            const keys = []
-
-            for (let i = 0, len = length; i < len; i++) {
-                const key = keyFn.call(this.SE, i)
-                keys.push(key)
-            }
-
-            return keys
-        }
-
-        return { _clear, _getItem, _getInfo, _setItem, _getAllKeys, _removeItem, _clearSync, _getItemSync, _setItemSync, _getInfoSync, _removeItemSync }
-    }
-
-    /**
-     * 统一规范化小程序的各个方法
-     * @return {Object}
-     */
-    _formatMethodsByWX () {
-        const {
-            getStorage,
-            setStorage,
-            removeStorage,
-            getStorageInfo,
-        } = this.SE
-
-        const promisify = (fn) => (args = {}) => new Promise(
-            (success, fail) => fn.call(
-                this.SE,
-                { fail, success, ...args }
-            )
-        )
-
-        const rmFn = promisify(removeStorage)
-        const getFn = promisify(getStorage)
-        const setFn = promisify(setStorage)
-
-        const _clear = (whiteList) => (
-            _getAllKeys()
-                .then(this._getKeysByWhiteList(whiteList))
-                .then((keys) => keys.map(_removeItem))
-                .then(pAll)
-        )
-        const _setItem = (key, data) => setFn({ key, data })
-        const _getItem = key => getFn({ key }).then(({ data }) => data)
-        const _removeItem = key => rmFn({ key })
-        const _getAllKeys = () => _getInfo().then(({ keys }) => keys)
-        const _getInfo = promisify(getStorageInfo)
-
-        const _clearSync = (whiteList) => {
-            const allKeys = _getAllKeysSync()
-
-            this._getKeysByWhiteList(whiteList)(allKeys)
-                .map(_removeItemSync)
-        }
-        const _getItemSync = this.SE.getStorageSync
-        const _setItemSync = this.SE.setStorageSync
-        const _getInfoSync = this.SE.getStorageInfoSync
-        const _getAllKeysSync = () => _getInfoSync().keys
-        const _removeItemSync = this.SE.removeStorageSync
-
-        return { _clear, _setItem, _getItem, _getInfo, _getAllKeys, _removeItem, _clearSync, _setItemSync, _getItemSync, _getInfoSync, _removeItemSync }
-    }
-
-    /**
      * 统一规范化 wx、localStorage、AsyncStorage 三种存储引擎的调用方法
      * @return {Object | Null}
      */
-    _getFormatedSE () {
+    _getSEMethods () {
         const noop = () => {}
         const _getInfoSync = () => ({ keys: this._getAllCacheKeys() })
 
@@ -514,29 +384,16 @@ export default class TuaStorage {
             return defaultSEMap
         }
 
-        const SEMethods = {
-            wx: [
-                'setStorage',
-                'getStorage',
-                'removeStorage',
-                'getStorageInfo',
-                'getStorageInfoSync',
-            ],
-            ls: ['getItem', 'setItem', 'removeItem'],
-            as: ['getItem', 'setItem', 'multiRemove'],
-        }
-
         const isSEHasThisProp = p => !!this.SE[p]
-
-        const isWX = SEMethods.wx.every(isSEHasThisProp)
+        const isWX = REQUIRED_SE_METHODS.wx.every(isSEHasThisProp)
 
         // 当前是支持所有必需小程序 api 的环境
-        if (isWX) return this._formatMethodsByWX()
+        if (isWX) return formatMethodsByWX.call(this)
 
         // 部分必需 api 不存在
-        const missedLSApis = SEMethods.ls.filter(negate(isSEHasThisProp))
-        const missedASApis = SEMethods.as.filter(negate(isSEHasThisProp))
-        const missedWXApis = SEMethods.wx.filter(negate(isSEHasThisProp))
+        const missedLSApis = REQUIRED_SE_METHODS.ls.filter(negate(isSEHasThisProp))
+        const missedASApis = REQUIRED_SE_METHODS.as.filter(negate(isSEHasThisProp))
+        const missedWXApis = REQUIRED_SE_METHODS.wx.filter(negate(isSEHasThisProp))
 
         const requiredApisNotFound =
             missedLSApis.length &&
@@ -560,8 +417,8 @@ export default class TuaStorage {
             const isPromise = !!(promiseTest && promiseTest.then)
 
             return isPromise
-                ? this._formatMethodsByAS()
-                : this._formatMethodsByLS()
+                ? formatMethodsByAS.call(this)
+                : formatMethodsByLS.call(this)
         } catch (e) {
             return defaultSEMap
         }
@@ -631,7 +488,7 @@ export default class TuaStorage {
                 if (err) {
                     logger.error(err)
 
-                    return Promise.reject(err)
+                    return pRej(err)
                 }
             }
 

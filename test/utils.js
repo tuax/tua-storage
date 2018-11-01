@@ -1,4 +1,5 @@
 import {
+    stringify,
     getParamStrFromObj,
 } from '../src/utils'
 import {
@@ -17,12 +18,14 @@ export const getTargetKey = (prefix, syncParams = {}) =>
         : `${prefix}?${getParamStrFromObj(syncParams)}`
     )
 
-export const getExpectedVal =(rawData, et = expireTime) => JSON.stringify({
+export const getExpectedVal =(rawData, et = expireTime) => stringify({
     rawData,
     expires: parseInt(Date.now() / 1000) + et,
 })
 
-export const getExpectedValBySyncFn = (rawData, et = expireTime) => JSON.stringify({
+export const getExpectedValBySyncFn = (rawData, et = expireTime) => stringify({
     rawData: { code: 0, data: rawData },
     expires: parseInt(Date.now() / 1000) + et,
 })
+
+export * from '../src/utils'
