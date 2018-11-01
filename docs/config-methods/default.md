@@ -9,7 +9,10 @@ new TuaStorage({
     whiteList,
     storageEngine,
     defaultExpires,
+    neverExpireMark,
     storageKeyPrefix,
+    autoClearTime,
+    isEnableAutoClear,
 })
 ```
 
@@ -23,11 +26,11 @@ new TuaStorage({
 * 类型：`String[]`
 * 默认值：`[]`
 
-默认为 []，调用清空数据的 `clear` 方法时，会跳过其中的元素。
+默认为 []，调用清空数据的 `clear/clearSync` 方法时，会跳过其中的元素。
 
 ## storageEngine 存储引擎
 * 类型：`Object`
-* 默认值：`[]`
+* 默认值：`null`
 
 默认为 null, 可传递 `wx` / `localStorage` / `AsyncStorage`
 

@@ -9,7 +9,7 @@
 tuaStorage
     .save({
         key: 'data key',
-        data: { foo: 'bar },
+        data: { foo: 'bar' },
     })
     .then(console.log)
     .catch(console.error)
