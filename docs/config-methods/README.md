@@ -15,12 +15,12 @@ api 分为两个部分来说明：
 
 ## 实例方法
 * save
-* saveSync
 * load
-* loadSync
-* remove
-* removeSync
 * clear
-* clearSync
+* remove
 * getInfo
+* saveSync
+* loadSync
+* clearSync
+* removeSync
 * getInfoSync
