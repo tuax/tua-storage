@@ -1,37 +1,20 @@
 export default class Wx {
     constructor () {
         this.store = {}
+
+        this.getStorageSync = this.getStorageSync.bind(this)
+        this.setStorageSync = this.setStorageSync.bind(this)
+        this.removeStorageSync = this.removeStorageSync.bind(this)
+        this.getStorageInfoSync = this.getStorageInfoSync.bind(this)
+        this.getStorageInfoSync = this.getStorageInfoSync.bind(this)
     }
 
-    _clear (key) {
+    _clear () {
         this.store = {}
     }
 
     get _length () {
         return Object.keys(this.store).length
-    }
-
-    removeStorageSync (key) {
-        delete this.store[key]
-    }
-
-    removeStorage ({
-        key,
-        fail,
-        success,
-        complete,
-    }) {
-        try {
-            delete this.store[key]
-
-            success && success({
-                errMsg: 'removeStorage:ok',
-            })
-        } catch ({ message }) {
-            fail && fail({ errMsg: message })
-        } finally {
-            complete && complete()
-        }
     }
 
     getStorage ({
@@ -60,6 +43,10 @@ export default class Wx {
         }
     }
 
+    getStorageSync (key) {
+        return this.store[key]
+    }
+
     setStorage ({
         key,
         data,
@@ -81,16 +68,41 @@ export default class Wx {
         }
     }
 
+    setStorageSync (key, data) {
+        this.store[key] = data
+    }
+
+    removeStorage ({
+        key,
+        fail,
+        success,
+        complete,
+    }) {
+        try {
+            delete this.store[key]
+
+            success && success({
+                errMsg: 'removeStorage:ok',
+            })
+        } catch ({ message }) {
+            fail && fail({ errMsg: message })
+        } finally {
+            complete && complete()
+        }
+    }
+
+    removeStorageSync (key) {
+        delete this.store[key]
+    }
+
     getStorageInfo ({
         fail,
         success,
         complete,
     }) {
         try {
-            const keys = Object.keys(this.store)
-
             success && success({
-                keys,
+                keys: Object.keys(this.store),
                 errMsg: 'getStorageInfo:ok',
                 limitSize: 10240, // kb
                 currentSize: 0, // kb
@@ -99,6 +111,14 @@ export default class Wx {
             fail && fail({ errMsg: message })
         } finally {
             complete && complete()
+        }
+    }
+
+    getStorageInfoSync () {
+        return {
+            keys: Object.keys(this.store),
+            limitSize: 10240, // kb
+            currentSize: 0, // kb
         }
     }
 }

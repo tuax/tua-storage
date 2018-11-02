@@ -1,7 +1,8 @@
-import TuaStorage from '../src/storage'
+import TuaStorage from '../src/'
 import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/constants'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     getTargetKey,
     getExpectedVal,
@@ -32,7 +33,7 @@ describe('timers', () => {
         Date.now = jest.fn(() => +new Date)
     })
 
-    test('feat[8.3]: setInterval to clean expired data', () => (
+    test('setInterval to clean expired data', () => (
         tuaStorage
             .save([
                 { key: `${key}1`, data, syncParams, expires: 10 },
@@ -54,7 +55,7 @@ describe('timers', () => {
             })
     ))
 
-    test('feat[5]: save and load one item which will never expire', () => (
+    test('save and load one item which will never expire', () => (
         tuaStorage
             .save({ key, data, syncParams, expires: null })
             .then(() => new Promise((resolve) => {
@@ -74,6 +75,22 @@ describe('timers', () => {
             })
     ))
 
+    test('saveSync and loadSync one item which will never expire', () => {
+        tuaStorage.saveSync({ key, data, syncParams, expires: null })
+
+        Date.now = jest.fn(() => TIME_OUT + (+new Date))
+        setTimeout(timeoutFn, TIME_OUT)
+        jest.advanceTimersByTime(TIME_OUT)
+
+        function timeoutFn () {
+            const loadedData = tuaStorage.loadSync({ key, syncParams })
+
+            expect(loadedData).toBe(data)
+            expect(getObjLen(cache)).toBe(1)
+            expect(cache[targetKey].rawData).toBe(data)
+        }
+    })
+
     test('save and load one expired item without syncFn', () => {
         const loadExpiredItemWithoutSyncFn = tuaStorage
             .save({ key, data, syncParams })
@@ -88,7 +105,7 @@ describe('timers', () => {
                 jest.advanceTimersByTime(TIME_OUT)
             }))
 
-        const str = JSON.stringify({ key: targetKey })
+        const str = stringify({ key: targetKey })
 
         expect(loadExpiredItemWithoutSyncFn)
             .rejects.toEqual(Error(str))
@@ -127,7 +144,7 @@ describe('error handling', () => {
     test('load one expired item without syncFn', () => {
         tuaStorage._cache[targetKey] = fakeVal
 
-    const str = JSON.stringify({ key: targetKey })
+    const str = stringify({ key: targetKey })
 
         expect(tuaStorage.load({ key, syncParams }))
             .rejects.toEqual(Error(str))
@@ -148,7 +165,7 @@ describe('error handling', () => {
             { key },
         ]
 
-        const str = JSON.stringify({ key: getTargetKey(key) })
+        const str = stringify({ key: getTargetKey(key) })
 
         expect(tuaStorage.load(dataArr))
             .rejects
@@ -194,7 +211,7 @@ describe('save/load/remove', () => {
             })
     ))
 
-    test('feat[8.1]: never save data which is destined to expired', () => (
+    test('never save data which is destined to expired', () => (
         tuaStorage
             .save({ key, data, syncParams, expires: 0 })
             .then(() => {
@@ -202,7 +219,7 @@ describe('save/load/remove', () => {
             })
     ))
 
-    test('feat[6]: save, load and remove one item with fullKey', () => {
+    test('save, load and remove one item with fullKey', () => {
         const expectedVal = getExpectedVal(data, DEFAULT_EXPIRES)
 
         return Promise.all([
@@ -211,13 +228,13 @@ describe('save/load/remove', () => {
             ])
             .then(() => tuaStorage.load({ fullKey }))
             .then(() => {
-                expect(JSON.stringify(cache[fullKey])).toBe(expectedVal)
+                expect(stringify(cache[fullKey])).toBe(expectedVal)
             })
             .then(() => tuaStorage.remove({ fullKey }))
             .then(() => {
                 expect(cache[fullKey]).toBeUndefined()
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[getTargetKey(fullKey)]))
+                expect(stringify(cache[getTargetKey(fullKey)]))
                     .toBe(expectedVal)
             })
     })
@@ -238,6 +255,16 @@ describe('save/load/remove', () => {
             })
     })
 
+    test('loadSync one exist expired item', () => {
+        tuaStorage._cache[targetKey] = fakeVal
+
+        const cacheData = tuaStorage.loadSync({ key, syncParams })
+        const loadedData = tuaStorage.loadSync({ key, syncParams, isEnableCache: false })
+
+        expect(cacheData).toBeUndefined()
+        expect(loadedData).toBeUndefined()
+    })
+
     test('load inexistent items with syncFn and non-zero code', () => {
         const syncFn = () => Promise.resolve({ code: 66, data })
         const dataArr = [
@@ -254,7 +281,7 @@ describe('save/load/remove', () => {
                     expect(code).toBe(66)
                     expect(loadedData).toBe(data)
                     expect(getObjLen(cache)).toBe(0)
-                    expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+                    expect(stringify(cache[targetKey])).toBeUndefined()
                 })
             })
     })
@@ -302,5 +329,90 @@ describe('save/load/remove', () => {
                     .map(({ key }) => cache[getTargetKey(key)])
                     .map(val => expect(val).toBeUndefined())
             })
+    })
+
+    test('get storage info', () => (
+        tuaStorage
+            .save({ key, data })
+            .then(tuaStorage.getInfo.bind(tuaStorage))
+            .then(({ keys }) => {
+                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+            })
+    ))
+})
+
+describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
+    afterEach(() => {
+        cache = tuaStorage._cache = {}
+    })
+
+    test('never save data which is destined to expired', () => {
+        tuaStorage.saveSync({ key, data, syncParams, expires: 0 })
+
+        expect(getObjLen(cache)).toBe(0)
+    })
+
+    test('load some exist items with one key and disable cache', () => {
+        const dataArr = [
+            { fullKey: 'cache key', data, isEnableCache: true },
+            { key, data: '+1s', expires: 10, isEnableCache: false },
+            { key, data: 1217, isEnableCache: false },
+            { key, data, isEnableCache: false },
+        ]
+        const targetKey = getTargetKey(key)
+        const expectedVal = getExpectedVal(data, 30)
+        tuaStorage.saveSync(dataArr)
+        const [loadedItem, ...rest] = tuaStorage.loadSync(dataArr)
+
+        expect(loadedItem).toBe(data)
+        expect(rest).toEqual([undefined, undefined, undefined])
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBeUndefined()
+        expect(stringify(cache['cache key'])).toEqual(expectedVal)
+    })
+
+    test('remove some undefined items', () => {
+        const keyArr = ['item key1', 'item key2', 'item key3']
+        const targetKey = getTargetKey(key)
+        const expectedVal = getExpectedVal(data, 30)
+        tuaStorage.saveSync({ key, data })
+        tuaStorage.removeSync(keyArr)
+
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
+    })
+
+    test('clear some items by whiteList', () => {
+        const kdArr = [
+            { key: 'cmm-1', data: 'string' },
+            { key: 'cmm-2', data: 1217 },
+            { key: 'cmm-3', data: null },
+            { key: 'cmm-4', data: undefined },
+            { key: 'cmm-5', data: { yo: 1, hey: { 876: 123 } } },
+        ]
+        const whiteList = ['3', '4', '5']
+        const expectedValues = kdArr.map(({ data }) => getExpectedVal(data, 30))
+        kdArr.map(({ key, data }) => tuaStorage.saveSync({ key, data }))
+        tuaStorage.clearSync(whiteList)
+
+        kdArr.map(({ key }, idx) => {
+            const targetKey = getTargetKey(key)
+            const expectedVal = expectedValues[idx]
+            const isInWhiteList = whiteList
+                .some(targetKey.includes.bind(targetKey))
+
+            expect(getObjLen(cache)).toBe(whiteList.length)
+            isInWhiteList
+                ? expect(stringify(cache[targetKey])).toBe(expectedVal)
+                : expect(cache[targetKey]).toBeUndefined()
+        })
+    })
+
+    test('get storage info sync', () => {
+        tuaStorage.saveSync({ key, data })
+
+        const { keys } = tuaStorage.getInfoSync()
+
+        expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
     })
 })

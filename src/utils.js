@@ -22,10 +22,20 @@ const jsonParse = (data) => (
     typeof data === 'string' ? JSON.parse(data) : data
 )
 
+const stringify = JSON.stringify.bind(JSON)
+
+const pAll = Promise.all.bind(Promise)
+const pRej = Promise.reject.bind(Promise)
+const pRes = Promise.resolve.bind(Promise)
+
 export * from './logger'
 export * from './decorators'
 export {
+    pAll,
+    pRej,
+    pRes,
     negate,
     jsonParse,
+    stringify,
     getParamStrFromObj,
 }

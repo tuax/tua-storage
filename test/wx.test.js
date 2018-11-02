@@ -1,8 +1,9 @@
 import wxCls from './wxMock'
 
-import Storage from '../src/storage'
+import TuaStorage from '../src/'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -12,17 +13,17 @@ import { DEFAULT_KEY_PREFIX } from '../src/constants'
 
 const wx = new wxCls()
 
-const tuaStorage = new Storage({
+const tuaStorage = new TuaStorage({
     storageEngine: wx,
     defaultExpires: expireTime,
 })
 
 const key = 'common key'
 const data = 'common data'
-const fullKey = 'common fullKey'
+// const fullKey = 'common fullKey'
 const syncParams = { a: 1, b: '2' }
 
-const targetKey = getTargetKey(key, syncParams)
+// const targetKey = getTargetKey(key, syncParams)
 
 let cache = tuaStorage._cache
 let store = wx.store
@@ -31,7 +32,7 @@ describe('timers', () => {
     jest.useFakeTimers()
 
     // 专门用于测试时间相关的实例
-    const tuaStorage = new Storage({
+    const tuaStorage = new TuaStorage({
         storageEngine: localStorage,
     })
     let cache = tuaStorage._cache
@@ -43,7 +44,7 @@ describe('timers', () => {
         Date.now = jest.fn(() => +new Date)
     })
 
-    test('feat[8.3]: setInterval to clean expired data', () => (
+    test('setInterval to clean expired data', async () => (
         tuaStorage
             .save([
                 { key: `${key}1`, data, syncParams, expires: 10 },
@@ -81,10 +82,10 @@ describe('initial state', () => {
         store = wx.store
     })
 
-    test('feat[8.2]: clean initial expired data', () => {
+    test('clean initial expired data', () => {
         wx.store = {
             [`${DEFAULT_KEY_PREFIX}1`]: getExpectedVal(data, -10),
-            [`${DEFAULT_KEY_PREFIX}2`]: JSON.stringify({}),
+            [`${DEFAULT_KEY_PREFIX}2`]: stringify({}),
             [`${DEFAULT_KEY_PREFIX}3`]: 'abc',
             [`${DEFAULT_KEY_PREFIX}4`]: getExpectedVal(data, 10),
         }
@@ -117,14 +118,14 @@ describe('initial state', () => {
     })
 })
 
-describe('save/load/clear/remove', () => {
+describe('save/load/clear/remove/getInfo', () => {
     afterEach(() => {
         wx._clear()
         cache = tuaStorage._cache = {}
         store = wx.store
     })
 
-    test('feat[8.1]: never save data which is destined to expired', () => (
+    test('never save data which is destined to expired', () => (
         tuaStorage
             .save({ key, data, syncParams, expires: 0 })
             .then(() => {
@@ -152,11 +153,11 @@ describe('save/load/clear/remove', () => {
 
                     // cache
                     expect(getObjLen(cache)).toBe(0)
-                    expect(JSON.stringify(cache[targetKey])).toBeUndefined()
+                    expect(stringify(cache[targetKey])).toBeUndefined()
 
                     // storage
                     expect(wx._length).toBe(1)
-                    expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                    expect(stringify(store[targetKey])).toBe(expectedVal)
                 })
             })
     })
@@ -172,11 +173,11 @@ describe('save/load/clear/remove', () => {
             .then(() => {
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(wx._length).toBe(1)
-                expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                expect(stringify(store[targetKey])).toBe(expectedVal)
             })
     })
 
@@ -189,34 +190,153 @@ describe('save/load/clear/remove', () => {
             { key: 'cmm-5', data: { yo: 1, hey: { 876: 123 } } },
         ]
         const whiteList = ['3', '4', '5']
-        const expectedVals = kdArr.map(({ data }) => getExpectedVal(data))
+        const expectedValues = kdArr.map(({ data }) => getExpectedVal(data))
 
         return Promise
             .all(kdArr.map(({ key, data }) => tuaStorage.save({ key, data })))
             .then(() => tuaStorage.clear(whiteList))
             .then(() => {
-                kdArr.map(({ key, data }, idx) => {
+                kdArr.map(({ key }, idx) => {
                     const targetKey = getTargetKey(key)
-                    const deltaLen = kdArr.length - whiteList.length
-                    const expectedVal = expectedVals[idx]
+                    const expectedVal = expectedValues[idx]
                     const isInWhiteList = whiteList
                         .some(targetKey.includes.bind(targetKey))
 
                     // cache
                     expect(getObjLen(cache)).toBe(whiteList.length)
                     isInWhiteList
-                        ? expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                        ? expect(stringify(cache[targetKey])).toBe(expectedVal)
                         : expect(cache[targetKey]).toBeUndefined()
 
                     // storage
                     expect(wx._length).toBe(whiteList.length)
 
                     if (isInWhiteList) {
-                        expect(JSON.stringify(store[targetKey])).toBe(expectedVal)
+                        expect(stringify(store[targetKey])).toBe(expectedVal)
                     } else {
-                        expect(JSON.stringify(store[targetKey])).toBeUndefined()
+                        expect(stringify(store[targetKey])).toBeUndefined()
                     }
                 })
             })
+    })
+
+    test('get storage info', () => (
+        tuaStorage
+            .save({ key, data })
+            .then(tuaStorage.getInfo.bind(tuaStorage))
+            .then(({ keys, limitSize, currentSize }) => {
+                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+                expect(limitSize).toEqual(10240)
+                expect(currentSize).toEqual(0)
+            })
+    ))
+})
+
+describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
+    afterEach(() => {
+        wx._clear()
+        cache = tuaStorage._cache = {}
+        store = wx.store
+    })
+
+    test('never save data which is destined to expired', () => {
+        tuaStorage.saveSync({ key, data, syncParams, expires: 0 })
+
+        expect(getObjLen(cache)).toBe(0)
+        expect(wx._length).toBe(0)
+    })
+
+    test('load some exist items with one key and disable cache', () => {
+        const dataArr = [
+            { key, data: '+1s', expires: 10, isEnableCache: false },
+            { key, data: 1217, isEnableCache: false },
+            { key, data, isEnableCache: false },
+            { fullKey: 'cache key', data, isEnableCache: true },
+        ]
+        const targetKey = getTargetKey(key)
+        const expectedVal = getExpectedVal(data)
+
+        tuaStorage.saveSync(dataArr)
+
+        const loadedItems = tuaStorage.loadSync(dataArr)
+
+        loadedItems.map((loadedItem) => {
+            // load function returns rawData
+            expect(loadedItem).toBe(data)
+
+            // cache
+            expect(getObjLen(cache)).toBe(1)
+            expect(stringify(cache[targetKey])).toBeUndefined()
+            expect(stringify(cache['cache key'])).toEqual(expectedVal)
+
+            // storage
+            expect(wx._length).toBe(2)
+            expect(stringify(store[targetKey])).toBe(expectedVal)
+        })
+    })
+
+    test('remove some undefined items', () => {
+        const keyArr = ['item key1', 'item key2', 'item key3']
+        const targetKey = getTargetKey(key)
+        const expectedVal = getExpectedVal(data)
+
+        tuaStorage.saveSync({ key, data })
+        tuaStorage.removeSync(keyArr)
+
+        // cache
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
+
+        // storage
+        expect(wx._length).toBe(1)
+        expect(stringify(store[targetKey])).toBe(expectedVal)
+    })
+
+    test('clear some items by whiteList', () => {
+        const kdArr = [
+            { key: 'cmm-1', data: 'string' },
+            { key: 'cmm-2', data: 1217 },
+            { key: 'cmm-3', data: null },
+            { key: 'cmm-4', data: undefined },
+            { key: 'cmm-5', data: { yo: 1, hey: { 876: 123 } } },
+        ]
+        const whiteList = ['3', '4', '5']
+        const expectedValues = kdArr.map(({ data }) => getExpectedVal(data))
+
+        kdArr.map(({ key, data }) => tuaStorage.saveSync({ key, data }))
+
+        tuaStorage.clearSync(whiteList)
+
+        kdArr.map(({ key }, idx) => {
+            const targetKey = getTargetKey(key)
+            const expectedVal = expectedValues[idx]
+            const isInWhiteList = whiteList
+                .some(targetKey.includes.bind(targetKey))
+
+            // cache
+            expect(getObjLen(cache)).toBe(whiteList.length)
+            isInWhiteList
+                ? expect(stringify(cache[targetKey])).toBe(expectedVal)
+                : expect(cache[targetKey]).toBeUndefined()
+
+            // storage
+            expect(wx._length).toBe(whiteList.length)
+
+            if (isInWhiteList) {
+                expect(stringify(store[targetKey])).toBe(expectedVal)
+            } else {
+                expect(stringify(store[targetKey])).toBeUndefined()
+            }
+        })
+    })
+
+    test('get storage info sync', () => {
+        tuaStorage.saveSync({ key, data })
+
+        const { keys, limitSize, currentSize } = tuaStorage.getInfoSync()
+
+        expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+        expect(limitSize).toEqual(10240)
+        expect(currentSize).toEqual(0)
     })
 })

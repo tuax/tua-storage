@@ -3,7 +3,7 @@ module.exports = {
     locales: {
         '/': {
             title: 'tua-storage',
-            description: '📦统一封装各个端（小程序、web 端、React-Native）中对于缓存层的使用'
+            description: '📦统一封装各个端（小程序、web 端、React-Native、Node 端）中对于缓存层的使用'
         }
     },
     head: [
@@ -22,8 +22,8 @@ module.exports = {
                 link: '/quick-start/',
             },
             {
-                text: 'api',
-                link: '/api/',
+                text: '配置和方法',
+                link: '/config-methods/',
             },
             {
                 text: '生态系统',
@@ -42,13 +42,13 @@ module.exports = {
                         'installation',
                         '',
                         'sync-data',
-                        '../api/',
+                        '../config-methods/',
                     ],
                 },
             ],
-            '/api/': [
+            '/config-methods/': [
                 {
-                    title: 'api',
+                    title: '配置和方法',
                     collapsable: false,
                     children: [
                         '',

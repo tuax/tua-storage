@@ -1,9 +1,10 @@
 import AsyncStorageCls from 'mock-async-storage'
 
-import Storage from '../src/storage'
-import { DEFAULT_KEY_PREFIX } from '../src/constants'
+import TuaStorage from '../src/'
+import { ERROR_MSG, DEFAULT_KEY_PREFIX } from '../src/constants'
 import {
     TIME_OUT,
+    stringify,
     getObjLen,
     expireTime,
     getTargetKey,
@@ -12,7 +13,7 @@ import {
 
 const AsyncStorage = new AsyncStorageCls()
 
-const tuaStorage = new Storage({
+const tuaStorage = new TuaStorage({
     storageEngine: AsyncStorage,
     defaultExpires: expireTime,
 })
@@ -29,7 +30,7 @@ describe('timers', () => {
     jest.useFakeTimers()
 
     // 专门用于测试时间相关的实例
-    let tuaStorage = new Storage({
+    let tuaStorage = new TuaStorage({
         storageEngine: AsyncStorage,
     })
     let cache = tuaStorage._cache
@@ -40,7 +41,7 @@ describe('timers', () => {
         Date.now = jest.fn(() => +new Date)
     })
 
-    test('feat[8.3]: setInterval to clean expired data', () => (
+    test('setInterval to clean expired data', () => (
         tuaStorage
             .save([
                 { key: `${key}1`, data, syncParams, expires: 10 },
@@ -77,11 +78,11 @@ describe('initial state', () => {
         AsyncStorage.clear()
     })
 
-    test('feat[8.2]: clean initial expired data', () => (
+    test('clean initial expired data', () => (
         Promise
             .all([
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10)),
-                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, JSON.stringify({})),
+                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({})),
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc'),
                 AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10)),
             ])
@@ -120,7 +121,7 @@ describe('save/load/remove', () => {
         AsyncStorage.clear()
     })
 
-    test('feat[8.1]: never save data which is destined to expired', () => (
+    test('never save data which is destined to expired', () => (
         tuaStorage
             .save({ key, data, syncParams, expires: 0 })
             .then(() => {
@@ -145,11 +146,11 @@ describe('save/load/remove', () => {
 
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(store.size).toBe(1)
-                expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
+                expect(stringify(store.get(targetKey))).toBe(expectedVal)
             })
     })
 
@@ -165,11 +166,35 @@ describe('save/load/remove', () => {
 
                 // cache
                 expect(getObjLen(cache)).toBe(1)
-                expect(JSON.stringify(cache[targetKey])).toBe(expectedVal)
+                expect(stringify(cache[targetKey])).toBe(expectedVal)
 
                 // storage
                 expect(store.size).toBe(1)
-                expect(JSON.stringify(store.get(targetKey))).toBe(expectedVal)
+                expect(stringify(store.get(targetKey))).toBe(expectedVal)
             })
+    })
+
+    test('get storage info', () => (
+        tuaStorage
+            .save({ key, data })
+            .then(tuaStorage.getInfo.bind(tuaStorage))
+            .then(({ keys }) => {
+                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+            })
+    ))
+})
+
+describe('error handling', () => {
+    afterEach(() => {
+        cache = tuaStorage._cache = {}
+        AsyncStorage.clear()
+    })
+
+    test('throw error when invoke sync methods', () => {
+        expect(() => tuaStorage.clearSync()).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.saveSync({ key, data })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.loadSync({ key })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.removeSync({ key })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
+        expect(() => tuaStorage.getInfoSync({ key })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
     })
 })
