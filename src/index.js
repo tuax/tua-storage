@@ -181,18 +181,15 @@ export default class TuaStorage {
     @getFullKey
     loadSync ({ key, isEnableCache = true }) {
         const cacheData = this._cache[key]
-
-        if (isEnableCache && cacheData) {
-            const { expires, rawData } = jsonParse(cacheData)
-            if (!this._isDataExpired({ expires })) return rawData
-        }
+        const loadedData = (isEnableCache && cacheData)
+            ? cacheData
+            : this.SEMethods._getItemSync(key)
 
         // 没有数据直接返回 undefined
-        const loadedData = this.SEMethods._getItemSync(key)
         if (!loadedData) return undefined
 
         // 数据未过期才返回数据
-        const { expires, rawData } = loadedData
+        const { expires, rawData } = jsonParse(loadedData)
         if (!this._isDataExpired({ expires })) return rawData
     }
 
