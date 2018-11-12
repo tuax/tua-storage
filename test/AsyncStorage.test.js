@@ -190,6 +190,19 @@ describe('error handling', () => {
         AsyncStorage.clear()
     })
 
+    test('invalid AsyncStorage', () => {
+        const invalidAsyncStorage = new AsyncStorageCls()
+        invalidAsyncStorage.setItem = null
+        new TuaStorage({ storageEngine: invalidAsyncStorage })
+
+        invalidAsyncStorage.setItem = () => {
+            throw Error('invalid SE')
+        }
+        const fn = () => new TuaStorage({ storageEngine: invalidAsyncStorage })
+
+        expect(fn).toThrowError('invalid SE')
+    })
+
     test('throw error when invoke sync methods', () => {
         expect(() => tuaStorage.clearSync()).toThrow(Error(ERROR_MSG.SYNC_METHOD))
         expect(() => tuaStorage.saveSync({ key, data })).toThrow(Error(ERROR_MSG.SYNC_METHOD))
