@@ -106,7 +106,10 @@ describe('initial state', () => {
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({}))
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc')
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10))
-        new TuaStorage({ isEnableAutoClear: false })
+        new TuaStorage({
+            storageEngine: localStorage,
+            isEnableAutoClear: false,
+        })
 
         expect(getObjLen(store)).toBe(4)
         expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeDefined()

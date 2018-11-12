@@ -374,7 +374,7 @@ export default class TuaStorage {
             _removeItemSync: noop,
         }
 
-        // 未指定存储引擎
+        // 未指定存储引擎，默认使用内存
         if (!this.SE) {
             logger.warn(SE_ERROR_MSG)
 
@@ -397,28 +397,30 @@ export default class TuaStorage {
             missedASApis.length &&
             missedWXApis.length
 
+        // 当前传入的存储引擎在各种场景下，必须方法有缺失
         if (requiredApisNotFound) {
-            const displayMissingApis = (apis) =>
-                logger.warn(`Missing required apis:\n* ${apis.join('\n* ')}`)
+            // 传入空对象时不展示提示
+            if (JSON.stringify(this.SE) !== '{}') {
+                const displayMissingApis = (apis, se) =>
+                    logger.warn(`Missing required apis for ${se}:\n* ${apis.join('\n* ')}`)
 
-            missedLSApis.length && displayMissingApis(missedLSApis)
-            missedASApis.length && displayMissingApis(missedASApis)
-            missedWXApis.length && displayMissingApis(missedWXApis)
+                displayMissingApis(missedLSApis, 'localStorage')
+                displayMissingApis(missedASApis, 'AsyncStorage')
+                displayMissingApis(missedWXApis, 'wx')
 
-            logger.warn(SE_ERROR_MSG)
-        }
+                logger.warn(SE_ERROR_MSG)
+            }
 
-        try {
-            const promiseTest = this.SE.setItem('test', 'test')
-            this.SE.removeItem('test')
-            const isPromise = !!(promiseTest && promiseTest.then)
-
-            return isPromise
-                ? formatMethodsByAS.call(this)
-                : formatMethodsByLS.call(this)
-        } catch (e) {
             return defaultSEMap
         }
+
+        const promiseTest = this.SE.setItem('test', 'test')
+        this.SE.removeItem('test')
+        const isPromise = !!(promiseTest && promiseTest.then)
+
+        return isPromise
+            ? formatMethodsByAS.call(this)
+            : formatMethodsByLS.call(this)
     }
 
     /**
