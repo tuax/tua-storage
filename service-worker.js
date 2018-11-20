@@ -21,7 +21,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox
 self.__precacheManifest = [
   {
     "url": "404.html",
-    "revision": "d891118ac9f424a46c023e80e3e13dfc"
+    "revision": "96871f891203c10bc776289086289ae7"
   },
   {
     "url": "assets/css/1.styles.3ac4ce2d.css",
@@ -32,7 +32,7 @@ self.__precacheManifest = [
     "revision": "df7c35ec8029dbbde0735a45f875eaf7"
   },
   {
-    "url": "assets/css/styles.17518571.css",
+    "url": "assets/css/styles.8a2ba78e.css",
     "revision": "70decdd9b1b1ee38d07d58dab68bd9d0"
   },
   {
@@ -76,24 +76,24 @@ self.__precacheManifest = [
     "revision": "56066f5e0c2389b22f5c8d018dab206a"
   },
   {
-    "url": "assets/js/app.17518571.js",
-    "revision": "9ef6534cd9696e125fee53f0ff71620b"
+    "url": "assets/js/app.8a2ba78e.js",
+    "revision": "c1193f3b6674c737eb7274e92828d16f"
   },
   {
     "url": "config-methods/default.html",
-    "revision": "67ec306316a0ca25cb81fceaaded1bbb"
+    "revision": "54a0d5ddc82fb9778092965a87f576a3"
   },
   {
     "url": "config-methods/index.html",
-    "revision": "91bddbc736eec9e77dc7a2ae83491b77"
+    "revision": "155279bfe75bebe78d4182908158d8e7"
   },
   {
     "url": "config-methods/methods.html",
-    "revision": "462205910aaedf6a34aabd6b099c8c37"
+    "revision": "eb6647588a6a3d1b544d816a4bf35f01"
   },
   {
     "url": "index.html",
-    "revision": "7c30906c7b96399c536386eac983344b"
+    "revision": "0f51e6df704e9e79fca7e1727c36e1a2"
   },
   {
     "url": "logo.png",
@@ -101,15 +101,15 @@ self.__precacheManifest = [
   },
   {
     "url": "quick-start/index.html",
-    "revision": "720a7ec9e9d2e41cf4c4592cc864b999"
+    "revision": "b52ad3f0f37a119c3f2f49cc44209949"
   },
   {
     "url": "quick-start/installation.html",
-    "revision": "a067742bcd75ccc7c1a56fc1bfb26ada"
+    "revision": "4d0c2d3ad18168ebbd0977769c9303b8"
   },
   {
     "url": "quick-start/sync-data.html",
-    "revision": "618435c7c6549e29eb52ebb7cf9d82d8"
+    "revision": "f64bf216293a5452e3afd18b67ed4419"
   },
   {
     "url": "standard.svg",
