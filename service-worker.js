@@ -21,7 +21,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox
 self.__precacheManifest = [
   {
     "url": "404.html",
-    "revision": "c3e635f1d0a2a7016289775943e8846d"
+    "revision": "a7e176005ba85af42f8109c9dced0d76"
   },
   {
     "url": "assets/css/1.styles.3ac4ce2d.css",
@@ -32,7 +32,7 @@ self.__precacheManifest = [
     "revision": "df7c35ec8029dbbde0735a45f875eaf7"
   },
   {
-    "url": "assets/css/styles.5a457ba3.css",
+    "url": "assets/css/styles.8da644db.css",
     "revision": "70decdd9b1b1ee38d07d58dab68bd9d0"
   },
   {
@@ -60,8 +60,8 @@ self.__precacheManifest = [
     "revision": "33cec0252ab5787da5d13c4f51ee1cdd"
   },
   {
-    "url": "assets/js/6.399cf083.js",
-    "revision": "fd18643fabee16fe5007bc34e3c0f0d1"
+    "url": "assets/js/6.68b667ad.js",
+    "revision": "b5fa596ea74ef6bbfc4dfca1e6e337e1"
   },
   {
     "url": "assets/js/7.3c74a60d.js",
@@ -76,24 +76,24 @@ self.__precacheManifest = [
     "revision": "83a6fe3e02914062848e88fe7c36d1b7"
   },
   {
-    "url": "assets/js/app.5a457ba3.js",
-    "revision": "8681d895e9dbf3b6b9147ee54de09e2a"
+    "url": "assets/js/app.8da644db.js",
+    "revision": "55b7673fe190d3b0e2bf1fb5218ef742"
   },
   {
     "url": "config-methods/default.html",
-    "revision": "a505976e758b3aa5b26c47f67f9cbf70"
+    "revision": "d83c18b46db1ae56bf840f1e0b402080"
   },
   {
     "url": "config-methods/index.html",
-    "revision": "87a6a4111d4a35ea590adc8bb8c83273"
+    "revision": "b07e017ce79f0ae05fe0134482729a4e"
   },
   {
     "url": "config-methods/methods.html",
-    "revision": "492ce5f082831a1b36f284867e299354"
+    "revision": "5efe1388d29f9af410f0da3ce20a2afc"
   },
   {
     "url": "index.html",
-    "revision": "24ff5b300e89955d7e41d482b289c566"
+    "revision": "9e1659095dc763d6a0fcdee38875592e"
   },
   {
     "url": "logo.png",
@@ -101,15 +101,15 @@ self.__precacheManifest = [
   },
   {
     "url": "quick-start/index.html",
-    "revision": "adf050169af8398bfba30707b9954ebf"
+    "revision": "8494b9a5441fca9349a5ab715945bc9c"
   },
   {
     "url": "quick-start/installation.html",
-    "revision": "8547c97b5f074c54ebd20b8884d56c86"
+    "revision": "02337511596ef60658193c720cbb5405"
   },
   {
     "url": "quick-start/sync-data.html",
-    "revision": "0ec32aa96a0ee3712420e5b368b89c82"
+    "revision": "fb62f8528c7347a5e968acfd2f1c89e1"
   },
   {
     "url": "standard.svg",
