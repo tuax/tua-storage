@@ -1,7 +1,7 @@
 export const ERROR_MSG = {
     KEY: 'Please input key or fullKey!',
     PROMISE: 'SyncFn MUST return a Promise!',
-    SYNC_METHOD: 'This storageEngine not supports Sync methods!',
+    SYNC_METHOD: 'This storageEngine does not support Sync methods!',
 }
 
 export const DEFAULT_EXPIRES = 30 // 默认 30s，采用秒作为单位方便测试
