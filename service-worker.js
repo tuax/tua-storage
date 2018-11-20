@@ -21,7 +21,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox
 self.__precacheManifest = [
   {
     "url": "404.html",
-    "revision": "96871f891203c10bc776289086289ae7"
+    "revision": "c3e635f1d0a2a7016289775943e8846d"
   },
   {
     "url": "assets/css/1.styles.3ac4ce2d.css",
@@ -32,7 +32,7 @@ self.__precacheManifest = [
     "revision": "df7c35ec8029dbbde0735a45f875eaf7"
   },
   {
-    "url": "assets/css/styles.8a2ba78e.css",
+    "url": "assets/css/styles.5a457ba3.css",
     "revision": "70decdd9b1b1ee38d07d58dab68bd9d0"
   },
   {
@@ -72,28 +72,28 @@ self.__precacheManifest = [
     "revision": "199d68957e56af479cb0eab56298f431"
   },
   {
-    "url": "assets/js/9.9ef19f30.js",
-    "revision": "56066f5e0c2389b22f5c8d018dab206a"
+    "url": "assets/js/9.68d58bbf.js",
+    "revision": "83a6fe3e02914062848e88fe7c36d1b7"
   },
   {
-    "url": "assets/js/app.8a2ba78e.js",
-    "revision": "c1193f3b6674c737eb7274e92828d16f"
+    "url": "assets/js/app.5a457ba3.js",
+    "revision": "8681d895e9dbf3b6b9147ee54de09e2a"
   },
   {
     "url": "config-methods/default.html",
-    "revision": "54a0d5ddc82fb9778092965a87f576a3"
+    "revision": "a505976e758b3aa5b26c47f67f9cbf70"
   },
   {
     "url": "config-methods/index.html",
-    "revision": "155279bfe75bebe78d4182908158d8e7"
+    "revision": "87a6a4111d4a35ea590adc8bb8c83273"
   },
   {
     "url": "config-methods/methods.html",
-    "revision": "eb6647588a6a3d1b544d816a4bf35f01"
+    "revision": "492ce5f082831a1b36f284867e299354"
   },
   {
     "url": "index.html",
-    "revision": "0f51e6df704e9e79fca7e1727c36e1a2"
+    "revision": "24ff5b300e89955d7e41d482b289c566"
   },
   {
     "url": "logo.png",
@@ -101,15 +101,15 @@ self.__precacheManifest = [
   },
   {
     "url": "quick-start/index.html",
-    "revision": "b52ad3f0f37a119c3f2f49cc44209949"
+    "revision": "adf050169af8398bfba30707b9954ebf"
   },
   {
     "url": "quick-start/installation.html",
-    "revision": "4d0c2d3ad18168ebbd0977769c9303b8"
+    "revision": "8547c97b5f074c54ebd20b8884d56c86"
   },
   {
     "url": "quick-start/sync-data.html",
-    "revision": "f64bf216293a5452e3afd18b67ed4419"
+    "revision": "0ec32aa96a0ee3712420e5b368b89c82"
   },
   {
     "url": "standard.svg",
