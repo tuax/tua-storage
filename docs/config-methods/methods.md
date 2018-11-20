@@ -16,7 +16,7 @@ tuaStorage
 
 
 // 保存到 storage 中的数据大概长这样
-// key 之前要加上初始化传入的默认前缀
+// key 之前会加上初始化传入的默认前缀
 {
     'TUA_STORAGE_PREFIX: data key': {
         expires: 30,
@@ -156,7 +156,7 @@ async () => {
 * 默认值：`undefined` 或是初始化时 `syncFnMap` 中的对应函数
 
 ::: tip
-当数据不存在或已过期时，调用同步函数进行数据同步。详细使用方法请参阅 [数据同步](../quick/start/sync-data.md) 章节。
+当数据不存在或已过期时，调用同步函数进行数据同步。详细使用方法请参阅 [数据同步](../quick-start/sync-data.md) 章节。
 :::
 
 ### syncParams 同步参数对象

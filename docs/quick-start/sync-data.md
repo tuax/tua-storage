@@ -62,7 +62,6 @@ tuaStorage.load({ key: 'data one' })
 
 ```js
 import TuaStorage from 'tua-storage'
-// 小程序端要引入 'tua-api/dist/mp'
 import { getSyncFnMapByApis } from 'tua-api'
 
 // 本地写好的各种接口配置
