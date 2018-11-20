@@ -3,12 +3,18 @@ home: true
 actionText: 快速上手 →
 actionLink: /quick-start/
 features:
-- title: 支持多端
-  details: 支持 web 端、小程序、React-Native。
+- title: 多端统一 api
+  details: 支持 web 端、小程序端、React-Native、Node.js 端。
+- title: 支持数据同步
+  details: 没有数据怎么办，自动同步之。
+- title: 数据过期逻辑
+  details: 支持设定数据过期时间，再次读取时调用同步函数自动同步。
+- title: 自动清理过期数据
+  details: 启动时以及定时清理过期数据。
+- title: 支持永久保存
+  details: 数据可以设定为永不过期。
 - title: 支持批量操作
-  details: 接口同时支持对象和数组数据。
-- title: 支持多种缓存策略
-  details: 支持永久保存，也提供接口进行缓存数据同步，还支持定时清理过期数据。
+  details: 接口同时支持传入对象或数组。
 footer: MIT Licensed | Copyright © 2018-present StEve Young
 ---
 
