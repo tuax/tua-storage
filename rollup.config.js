@@ -1,21 +1,36 @@
 import json from 'rollup-plugin-json'
 import babel from 'rollup-plugin-babel'
 import { eslint } from 'rollup-plugin-eslint'
+import { uglify } from 'rollup-plugin-uglify'
 
-export default {
-    input: 'src/index.js',
-    output: [{
-        file: 'dist/umd.js',
+const output = {
+    es: {
+        file: 'dist/TuaStorage.es.js',
+        format: 'es',
+    },
+    umd: {
+        file: 'dist/TuaStorage.umd.js',
         name: 'TuaStorage',
         format: 'umd',
         exports: 'named',
-    }, {
-        file: 'dist/es.js',
-        format: 'es',
-    }],
-    plugins: [
-        eslint(),
-        json(),
-        babel(),
-    ],
+    },
 }
+const plugins = [
+    eslint(),
+    json(),
+    babel(),
+]
+
+export default [{
+    input: 'src/index.js',
+    output: [ output.es, output.umd ],
+    plugins,
+}, {
+    input: 'src/index.js',
+    output: {
+        ...output.umd,
+        file: 'dist/TuaStorage.umd.min.js',
+    },
+    plugins: [ ...plugins, uglify() ],
+}]
+
