@@ -206,7 +206,6 @@ load 方法的同步版本，在不支持同步方法的场景（AsyncStorage）
 try {
     const data = tuaStorage.loadSync({
         key,
-        expires,
         fullKey,
         syncParams,
         isEnableCache,
