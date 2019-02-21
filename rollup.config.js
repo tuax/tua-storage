@@ -3,14 +3,27 @@ import babel from 'rollup-plugin-babel'
 import { eslint } from 'rollup-plugin-eslint'
 import { uglify } from 'rollup-plugin-uglify'
 
+import pkg from './package.json'
+
+const input = `src/index.js`
+const banner = `/* ${pkg.name} version ${pkg.version} */`
+
 const output = {
-    es: {
-        file: 'dist/TuaStorage.es.js',
-        format: 'es',
+    cjs: {
+        file: pkg.main,
+        banner,
+        format: 'cjs',
+        exports: 'named',
+    },
+    esm: {
+        file: pkg.module,
+        banner,
+        format: 'esm',
     },
     umd: {
-        file: 'dist/TuaStorage.umd.js',
+        file: pkg.unpkg,
         name: 'TuaStorage',
+        banner,
         format: 'umd',
         exports: 'named',
     },
@@ -22,15 +35,14 @@ const plugins = [
 ]
 
 export default [{
-    input: 'src/index.js',
-    output: [ output.es, output.umd ],
+    input,
+    output: [ output.cjs, output.esm, output.umd ],
     plugins,
 }, {
-    input: 'src/index.js',
+    input,
     output: {
         ...output.umd,
         file: 'dist/TuaStorage.umd.min.js',
     },
     plugins: [ ...plugins, uglify() ],
 }]
-

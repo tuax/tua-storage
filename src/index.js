@@ -1,6 +1,6 @@
 /**
  * @file: 对外暴露以下方法：
- *   1.构造函数：用于初始化 TuaStorage，建议将实例挂载到全局变量上
+ *   1.构造函数：用于初始化 TuaStorage
  *
  * 异步函数，返回 Promise
  *   2.save: 保存函数
@@ -33,8 +33,7 @@ import {
     getParamStrFromObj,
 } from './utils'
 import {
-    ERROR_MSG,
-    SE_ERROR_MSG,
+    ERROR_MSGS,
     DEFAULT_EXPIRES,
     DEFAULT_KEY_PREFIX,
     REQUIRED_SE_METHODS,
@@ -45,11 +44,11 @@ import formatMethodsByWX from './storageEngines/wxStorage'
 
 logger.log(`Version: ${version}`)
 
-export default class TuaStorage {
+class TuaStorage {
     constructor ({
         whiteList = [],
         syncFnMap = Object.create(null),
-        storageEngine = null, // 可传递 wx / localStorage / AsyncStorage
+        storageEngine = null,
         defaultExpires = DEFAULT_EXPIRES,
         neverExpireMark = null,
         storageKeyPrefix = DEFAULT_KEY_PREFIX,
@@ -376,7 +375,7 @@ export default class TuaStorage {
 
         // 未指定存储引擎，默认使用内存
         if (!this.SE) {
-            logger.warn(SE_ERROR_MSG)
+            logger.warn(ERROR_MSGS.storageEngine)
 
             return defaultSEMap
         }
@@ -408,7 +407,7 @@ export default class TuaStorage {
                 displayMissingApis(missedASApis, 'AsyncStorage')
                 displayMissingApis(missedWXApis, 'wx')
 
-                logger.warn(SE_ERROR_MSG)
+                logger.warn(ERROR_MSGS.storageEngine)
             }
 
             return defaultSEMap
@@ -497,7 +496,7 @@ export default class TuaStorage {
             const originTask = syncFn(syncParams)
             const isPromise = !!(originTask && originTask.then)
 
-            if (!isPromise) return pRej(Error(ERROR_MSG.PROMISE))
+            if (!isPromise) return pRej(Error(ERROR_MSGS.promise))
 
             // 格式化数据结构
             const formatDataStructure = (data) => (data.code == null && data.data == null)
@@ -581,3 +580,9 @@ export default class TuaStorage {
         return expires === this.neverExpireMark
     }
 }
+
+TuaStorage.install = (Vue, options) => {
+    Vue.prototype.$tuaStorage = new TuaStorage(options)
+}
+
+export default TuaStorage

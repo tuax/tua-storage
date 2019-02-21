@@ -1,18 +1,26 @@
 <h1 align="center">tua-storage</h1>
 
-<h5 align="center">
-    让我们构建大一统的缓存层~
-</h5>
+<h4 align="center">让我们构建大一统的缓存层~</h4>
 
 <p align="center">
     <a href="https://tuateam.github.io/tua-storage/">👉完整文档地址点这里👈</a>
 </p>
 
 <p align="center">
-    <a href="https://circleci.com/gh/tuateam/tua-storage/tree/master"><img src="https://img.shields.io/circleci/project/github/tuateam/tua-storage/master.svg" alt="Build Status"></a>
-    <a href="https://codecov.io/github/tuateam/tua-storage?branch=master"><img src="https://img.shields.io/codecov/c/github/tuateam/tua-storage/master.svg" alt="Coverage Status"></a>
-    <a href="https://www.npmjs.com/package/tua-storage"><img src="https://img.shields.io/npm/v/tua-storage.svg" alt="Version"></a>
-    <a href="https://www.npmjs.com/package/tua-storage"><img src="https://img.shields.io/npm/l/tua-storage.svg" alt="License"></a>
+    <a href="https://circleci.com/gh/tuateam/tua-storage/tree/master" target="_blank">
+        <img src="https://img.shields.io/circleci/project/github/tuateam/tua-storage/master.svg" alt="Build Status">
+    </a>
+    <a href="https://codecov.io/github/tuateam/tua-storage?branch=master" target="_blank">
+        <img src="https://img.shields.io/codecov/c/github/tuateam/tua-storage/master.svg" alt="Coverage Status">
+    </a>
+    <a href="https://david-dm.org/tuateam/tua-storage" target="_blank">
+        <img src="https://david-dm.org/tuateam/tua-storage.svg" alt="dependencies">
+    </a>
+    <a href="https://www.npmjs.com/package/tua-storage" target="_blank">
+        <img src="https://badgen.net/npm/dm/tua-storage" alt="Downloads per month">
+        <img src="https://img.shields.io/npm/v/tua-storage.svg" alt="Version">
+        <img src="https://img.shields.io/npm/l/tua-storage.svg" alt="License">
+    </a>
 </p>
 
 ## 安装
@@ -48,7 +56,7 @@ $ yarn add tua-storage
 由于异步方法没法变成同步方法，所以以上方法在所有场景下都异步返回 `Promise`。
 
 ## 如何使用？
-首先参阅文档 [安装](https://tuateam.github.io/tua-storage/quick-start/installation.html) 将 `tua-storage` 安装到你的项目中，并正确地导入和初始化。
+首先参阅文档 [安装](https://tuateam.github.io/tua-storage/guide/installation.html) 将 `tua-storage` 安装到你的项目中，并正确地导入和初始化。
 
 ### 常规操作
 对于存储层来说，最基本的操作自然是保存（save）、读取（load）、删除（remove，删除单个）和清除（clear，清空全部）了。

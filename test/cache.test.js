@@ -1,12 +1,12 @@
-import TuaStorage from '../src/'
-import { ERROR_MSG, DEFAULT_EXPIRES } from '../src/constants'
+import TuaStorage from '@/index'
+import { ERROR_MSGS, DEFAULT_EXPIRES } from '@/constants'
 import {
     TIME_OUT,
     stringify,
     getObjLen,
     getTargetKey,
     getExpectedVal,
-    getExpectedValBySyncFn
+    getExpectedValBySyncFn,
 } from './utils'
 
 const tuaStorage = new TuaStorage()
@@ -30,7 +30,7 @@ describe('timers', () => {
 
     afterEach(() => {
         cache = tuaStorage._cache = {}
-        Date.now = jest.fn(() => +new Date)
+        Date.now = jest.fn(() => +new Date())
     })
 
     test('setInterval to clean expired data', () => (
@@ -41,14 +41,14 @@ describe('timers', () => {
                 { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
             ])
             .then(() => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
                 jest.advanceTimersByTime(TIME_OUT)
 
                 // 清除内存中的数据是同步操作
                 expect(getObjLen(cache)).toBe(2)
                 expect(cache[getTargetKey(`${key}1`)]).toBeUndefined()
 
-                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
                 jest.advanceTimersByTime(TIME_OUT * 2)
 
                 expect(getObjLen(cache)).toBe(1)
@@ -59,7 +59,7 @@ describe('timers', () => {
         tuaStorage
             .save({ key, data, syncParams, expires: null })
             .then(() => new Promise((resolve) => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
 
                 setTimeout(
                     () => resolve(tuaStorage.load({ key, syncParams })),
@@ -78,7 +78,7 @@ describe('timers', () => {
     test('saveSync and loadSync one item which will never expire', () => {
         tuaStorage.saveSync({ key, data, syncParams, expires: null })
 
-        Date.now = jest.fn(() => TIME_OUT + (+new Date))
+        Date.now = jest.fn(() => TIME_OUT + (+new Date()))
         setTimeout(timeoutFn, TIME_OUT)
         jest.advanceTimersByTime(TIME_OUT)
 
@@ -95,7 +95,7 @@ describe('timers', () => {
         const loadExpiredItemWithoutSyncFn = tuaStorage
             .save({ key, data, syncParams })
             .then(() => new Promise((resolve) => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
 
                 setTimeout(
                     () => resolve(tuaStorage.load({ key, syncParams })),
@@ -115,7 +115,7 @@ describe('timers', () => {
         tuaStorage
             .save({ key, data, syncParams })
             .then(() => new Promise((resolve) => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
 
                 setTimeout(() => resolve(
                     tuaStorage.load({
@@ -123,7 +123,7 @@ describe('timers', () => {
                         syncParams,
                         syncFn: () => Promise.resolve(data),
                     })),
-                    TIME_OUT
+                TIME_OUT
                 )
 
                 jest.advanceTimersByTime(TIME_OUT)
@@ -144,16 +144,16 @@ describe('error handling', () => {
     test('load one expired item without syncFn', () => {
         tuaStorage._cache[targetKey] = fakeVal
 
-    const str = stringify({ key: targetKey })
+        const str = stringify({ key: targetKey })
 
         expect(tuaStorage.load({ key, syncParams }))
             .rejects.toEqual(Error(str))
     })
 
     test('save/load/remove one item without key or fullKey', () => {
-        expect(tuaStorage.save()).rejects.toEqual(Error(ERROR_MSG.KEY))
-        expect(tuaStorage.load({})).rejects.toEqual(Error(ERROR_MSG.KEY))
-        expect(tuaStorage.remove()).rejects.toEqual(Error(ERROR_MSG.KEY))
+        expect(tuaStorage.save()).rejects.toEqual(Error(ERROR_MSGS.key))
+        expect(tuaStorage.load({})).rejects.toEqual(Error(ERROR_MSGS.key))
+        expect(tuaStorage.remove()).rejects.toEqual(Error(ERROR_MSGS.key))
     })
 
     test('no data found and no syncFn', () => {
@@ -181,7 +181,7 @@ describe('error handling', () => {
         }
 
         expect(tuaStorage.load(loadParam))
-            .rejects.toEqual(Error(ERROR_MSG.PROMISE))
+            .rejects.toEqual(Error(ERROR_MSGS.promise))
     })
 })
 
@@ -223,9 +223,9 @@ describe('save/load/remove', () => {
         const expectedVal = getExpectedVal(data, DEFAULT_EXPIRES)
 
         return Promise.all([
-                tuaStorage.save({ key: fullKey, data }),
-                tuaStorage.save({ fullKey, data }),
-            ])
+            tuaStorage.save({ key: fullKey, data }),
+            tuaStorage.save({ fullKey, data }),
+        ])
             .then(() => tuaStorage.load({ fullKey }))
             .then(() => {
                 expect(stringify(cache[fullKey])).toBe(expectedVal)

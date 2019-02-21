@@ -156,7 +156,7 @@ async () => {
 * 默认值：`undefined` 或是初始化时 `syncFnMap` 中的对应函数
 
 ::: tip
-当数据不存在或已过期时，调用同步函数进行数据同步。详细使用方法请参阅 [数据同步](../quick-start/sync-data.md) 章节。
+当数据不存在或已过期时，调用同步函数进行数据同步。详细使用方法请参阅 [数据同步](../guide/sync-data.md) 章节。
 :::
 
 ### syncParams 同步参数对象

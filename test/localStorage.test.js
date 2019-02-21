@@ -1,5 +1,5 @@
-import TuaStorage from '../src/'
-import { DEFAULT_KEY_PREFIX } from '../src/constants'
+import TuaStorage from '@/index'
+import { DEFAULT_KEY_PREFIX } from '@/constants'
 import {
     TIME_OUT,
     stringify,
@@ -41,7 +41,7 @@ describe('timers', () => {
     afterEach(() => {
         localStorage.clear()
         cache = tuaStorage._cache = {}
-        Date.now = jest.fn(() => +new Date)
+        Date.now = jest.fn(() => +new Date())
     })
 
     test('loadSync one exist expired item', () => {
@@ -59,7 +59,7 @@ describe('timers', () => {
                 { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
             ])
             .then(() => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
                 jest.advanceTimersByTime(TIME_OUT)
 
                 // 因为删除是异步操作
@@ -70,7 +70,7 @@ describe('timers', () => {
                 })
             })
             .then(() => {
-                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
                 jest.advanceTimersByTime(TIME_OUT * 2)
 
                 // 因为删除是异步操作
@@ -106,6 +106,8 @@ describe('initial state', () => {
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({}))
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc')
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10))
+
+        /* eslint-disable no-new */
         new TuaStorage({
             storageEngine: localStorage,
             isEnableAutoClear: false,

@@ -14,12 +14,12 @@ module.exports = {
                 ],
             ],
         },
-        'prod': {
+        'production': {
             'presets': [
                 [
                     '@babel/preset-env',
                     { 'modules': false },
-                ]
+                ],
             ],
             'plugins': [
                 [

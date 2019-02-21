@@ -1,6 +1,6 @@
-import wxCls from './wxMock'
+import WxCls from './wxMock'
 
-import TuaStorage from '../src/'
+import TuaStorage from '@/index'
 import {
     TIME_OUT,
     stringify,
@@ -9,9 +9,9 @@ import {
     getTargetKey,
     getExpectedVal,
 } from './utils'
-import { DEFAULT_KEY_PREFIX } from '../src/constants'
+import { DEFAULT_KEY_PREFIX } from '@/constants'
 
-const wx = new wxCls()
+const wx = new WxCls()
 
 const tuaStorage = new TuaStorage({
     storageEngine: wx,
@@ -41,7 +41,7 @@ describe('timers', () => {
         wx._clear()
         cache = tuaStorage._cache = {}
         store = wx.store
-        Date.now = jest.fn(() => +new Date)
+        Date.now = jest.fn(() => +new Date())
     })
 
     test('setInterval to clean expired data', async () => (
@@ -52,7 +52,7 @@ describe('timers', () => {
                 { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
             ])
             .then(() => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
                 jest.advanceTimersByTime(TIME_OUT)
 
                 // 因为删除是异步操作
@@ -63,7 +63,7 @@ describe('timers', () => {
                 })
             })
             .then(() => {
-                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date))
+                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
                 jest.advanceTimersByTime(TIME_OUT * 2)
 
                 // 因为删除是异步操作
@@ -89,7 +89,6 @@ describe('initial state', () => {
             [`${DEFAULT_KEY_PREFIX}3`]: 'abc',
             [`${DEFAULT_KEY_PREFIX}4`]: getExpectedVal(data, 10),
         }
-
 
         return tuaStorage._clearExpiredData()
             .then(() => {
