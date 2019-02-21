@@ -1,10 +1,10 @@
 import {
     stringify,
     getParamStrFromObj,
-} from '../src/utils'
+} from '@/utils'
 import {
     DEFAULT_KEY_PREFIX,
-} from '../src/constants'
+} from '@/constants'
 
 export const expireTime = 3
 
@@ -18,7 +18,7 @@ export const getTargetKey = (prefix, syncParams = {}) =>
         : `${prefix}?${getParamStrFromObj(syncParams)}`
     )
 
-export const getExpectedVal =(rawData, et = expireTime) => stringify({
+export const getExpectedVal = (rawData, et = expireTime) => stringify({
     rawData,
     expires: parseInt(Date.now() / 1000) + et,
 })
@@ -28,4 +28,4 @@ export const getExpectedValBySyncFn = (rawData, et = expireTime) => stringify({
     expires: parseInt(Date.now() / 1000) + et,
 })
 
-export * from '../src/utils'
+export * from '@/utils'

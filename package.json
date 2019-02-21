@@ -1,35 +1,38 @@
 {
     "name": "tua-storage",
-    "version": "1.5.2",
-    "main": "dist/TuaStorage.umd.js",
-    "module": "dist/TuaStorage.es.js",
-    "jsnext:main": "dist/TuaStorage.es.js",
-    "description": "A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
+    "version": "1.6.0",
+    "description": "🏗 A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
+    "main": "dist/TuaStorage.cjs.js",
+    "module": "dist/TuaStorage.esm.js",
+    "unpkg": "dist/TuaStorage.umd.js",
+    "jsdelivr": "dist/TuaStorage.umd.js",
     "files": [
         "src/",
         "dist/"
     ],
     "scripts": {
-        "docs": "vuepress dev docs -h localhost",
-        "docs:build": "vuepress build docs",
         "cov": "open coverage/lcov-report/index.html",
-        "tdd": "cross-env NODE_ENV=test jest --watch",
-        "test": "cross-env NODE_ENV=test jest && codecov",
-        "lint": "eslint --fix src/ test/",
-        "deploy": "yarn docs:build && gh-pages -m \"[ci skip]\" -d docs/.vuepress/dist",
+        "docs": "vuepress dev docs",
+        "docs:build": "vuepress build docs",
+        "lint": "eslint --fix . docs/.vuepress/ --ignore-path .gitignore",
+        "test": "cross-env NODE_ENV=test jest",
+        "test:tdd": "cross-env NODE_ENV=test jest --watch",
         "prebuild": "rimraf dist/* & npm run test",
-        "build": "cross-env NODE_ENV=prod rollup -c",
-        "pub": "npm run build && npm publish"
+        "build": "cross-env NODE_ENV=production rollup -c",
+        "next:pm": "npm --no-git-tag-version version preminor",
+        "next:pr": "npm --no-git-tag-version version prerelease",
+        "pub": "npm run build && npm publish",
+        "pub:n": "npm run build && npm publish --tag next"
     },
     "husky": {
         "hooks": {
-            "pre-push": "lint-staged",
+            "pre-push": "npm test",
             "pre-commit": "lint-staged",
             "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
         }
     },
     "lint-staged": {
-        "src/**/*.js": [
+        "{src,test}/**/*.js": [
             "eslint --fix",
             "git add"
         ]
@@ -40,6 +43,10 @@
         "clearMocks": true,
         "transform": {
             "^.+\\.js$": "babel-jest"
+        },
+        "moduleNameMapper": {
+            "@/(.*)$": "<rootDir>/src/$1",
+            "@examples/(.*)$": "<rootDir>/examples/$1"
         },
         "collectCoverage": true,
         "collectCoverageFrom": [
@@ -56,6 +63,44 @@
         "type": "git",
         "url": "git+https://github.com/tuateam/tua-storage.git"
     },
+    "bugs": {
+        "url": "https://github.com/tuateam/tua-storage/issues"
+    },
+    "homepage": "https://tuateam.github.io/tua-storage/",
+    "devDependencies": {
+        "@babel/core": "^7.3.3",
+        "@babel/plugin-external-helpers": "^7.2.0",
+        "@babel/plugin-proposal-decorators": "^7.3.0",
+        "@babel/plugin-proposal-object-rest-spread": "^7.3.2",
+        "@babel/preset-env": "^7.3.1",
+        "@commitlint/cli": "^7.5.2",
+        "@commitlint/config-conventional": "^7.5.0",
+        "@vue/test-utils": "^1.0.0-beta.29",
+        "babel-core": "^7.0.0-bridge.0",
+        "babel-eslint": "^10.0.1",
+        "babel-jest": "^24.1.0",
+        "codecov": "^3.2.0",
+        "cross-env": "^5.2.0",
+        "eslint": "^5.14.1",
+        "eslint-config-standard": "^12.0.0",
+        "eslint-plugin-import": "^2.16.0",
+        "eslint-plugin-node": "^8.0.1",
+        "eslint-plugin-promise": "^4.0.1",
+        "eslint-plugin-standard": "^4.0.0",
+        "gh-pages": "^2.0.1",
+        "husky": "^1.3.1",
+        "jest": "^24.1.0",
+        "jest-localstorage-mock": "^2.4.0",
+        "lint-staged": "^8.1.4",
+        "mock-async-storage": "^2.0.4",
+        "rimraf": "^2.6.3",
+        "rollup": "^1.2.2",
+        "rollup-plugin-babel": "^4.3.2",
+        "rollup-plugin-eslint": "^5.0.0",
+        "rollup-plugin-json": "^3.1.0",
+        "rollup-plugin-uglify": "^6.0.2",
+        "vuepress": "^1.0.0-alpha.39"
+    },
     "keywords": [
         "tua-storage",
         "storage",
@@ -65,42 +110,5 @@
         "weapp"
     ],
     "author": "StEve Young",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/tuateam/tua-storage/issues"
-    },
-    "homepage": "https://github.com/tuateam/tua-storage#readme",
-    "devDependencies": {
-        "@babel/core": "^7.0.0",
-        "@babel/plugin-external-helpers": "^7.0.0",
-        "@babel/plugin-proposal-decorators": "^7.0.0",
-        "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
-        "@babel/preset-env": "^7.2.0",
-        "@commitlint/cli": "^7.2.1",
-        "@commitlint/config-conventional": "^7.1.2",
-        "babel-core": "^7.0.0-bridge.0",
-        "babel-eslint": "^10.0.1",
-        "babel-jest": "^24.1.0",
-        "codecov": "^3.1.0",
-        "cross-env": "^5.2.0",
-        "eslint": "^5.9.0",
-        "eslint-config-standard": "^12.0.0",
-        "eslint-plugin-import": "^2.14.0",
-        "eslint-plugin-node": "^8.0.0",
-        "eslint-plugin-promise": "^4.0.1",
-        "eslint-plugin-standard": "^4.0.0",
-        "gh-pages": "^2.0.1",
-        "husky": "^1.2.0",
-        "jest": "^24.1.0",
-        "jest-localstorage-mock": "^2.3.0",
-        "lint-staged": "^8.1.0",
-        "mock-async-storage": "^2.0.4",
-        "rimraf": "^2.6.2",
-        "rollup": "^1.1.2",
-        "rollup-plugin-babel": "^4.0.3",
-        "rollup-plugin-eslint": "^5.0.0",
-        "rollup-plugin-json": "^3.1.0",
-        "rollup-plugin-uglify": "^6.0.0",
-        "vuepress": "^0.14.8"
-    }
+    "license": "MIT"
 }

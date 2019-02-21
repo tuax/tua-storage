@@ -1,4 +1,4 @@
-import { ERROR_MSG } from './constants'
+import { ERROR_MSGS } from './constants'
 
 /**
  * 生成装饰器的辅助函数
@@ -23,7 +23,7 @@ const checkKey = getDecorator((method) =>
         const { key = '', fullKey = '' } = paramsObj
 
         if (key === '' && fullKey === '') {
-            return Promise.reject(Error(ERROR_MSG.KEY))
+            return Promise.reject(Error(ERROR_MSGS.key))
         }
 
         return method.call(this, params)

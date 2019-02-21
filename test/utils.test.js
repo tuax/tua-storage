@@ -1,4 +1,4 @@
-import { negate, jsonParse, getParamStrFromObj } from '../src/utils'
+import { negate, jsonParse, getParamStrFromObj } from '@/utils'
 
 test('negate', () => {
     const isEven = n => n % 2 === 0

@@ -1,5 +1,5 @@
 import { logger } from '../utils'
-import { ERROR_MSG } from '../constants'
+import { ERROR_MSGS } from '../constants'
 
 /**
  * 统一规范化 AsyncStorage 的各个方法
@@ -16,7 +16,7 @@ export default function formatMethodsByAS () {
 
     const bindFnToSE = fn => fn.bind(this.SE)
     const throwSyncError = () => {
-        throw Error(ERROR_MSG.SYNC_METHOD)
+        throw Error(ERROR_MSGS.syncMethod)
     }
 
     const _clear = (whiteList) => (

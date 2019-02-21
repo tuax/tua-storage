@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "allowJs": true,
+        "baseUrl": ".",
+        "paths":{
+            "@/*": ["src/*"],
+            "@examples/*": ["examples/*"]
+        }
+    },
+    "exclude": ["node_modules", "dist"]
+}
