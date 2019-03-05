@@ -51,35 +51,32 @@ describe('timers', () => {
         expect(loadedData).toBeUndefined()
     })
 
-    test('setInterval to clean expired data', () => (
-        tuaStorage
-            .save([
-                { key: `${key}1`, data, syncParams, expires: 10 },
-                { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
-                { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
-            ])
-            .then(() => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
-                jest.advanceTimersByTime(TIME_OUT)
+    test('setInterval to clean expired data', async () => {
+        await tuaStorage.save([
+            { key: `${key}1`, data, syncParams, expires: 10 },
+            { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
+            { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
+        ])
 
-                // 因为删除是异步操作
-                setImmediate(() => {
-                    expect(getObjLen(cache)).toBe(2)
-                    expect(store.size).toBe(2)
-                    expect(cache[getTargetKey(`${key}1`)]).toBeUndefined()
-                })
-            })
-            .then(() => {
-                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
-                jest.advanceTimersByTime(TIME_OUT * 2)
+        Date.now = jest.fn(() => TIME_OUT + (+new Date()))
+        jest.advanceTimersByTime(TIME_OUT)
 
-                // 因为删除是异步操作
-                setImmediate(() => {
-                    expect(getObjLen(cache)).toBe(1)
-                    expect(store.size).toBe(1)
-                })
-            })
-    ))
+        // 因为删除是异步操作
+        setImmediate(() => {
+            expect(getObjLen(cache)).toBe(2)
+            expect(store.size).toBe(2)
+            expect(cache[getTargetKey(`${key}1`)]).toBeUndefined()
+        })
+
+        Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
+        jest.advanceTimersByTime(TIME_OUT * 2)
+
+        // 因为删除是异步操作
+        setImmediate(() => {
+            expect(getObjLen(cache)).toBe(1)
+            expect(store.size).toBe(1)
+        })
+    })
 })
 
 describe('initial state', () => {
@@ -88,17 +85,16 @@ describe('initial state', () => {
         cache = tuaStorage._cache = {}
     })
 
-    test('clean initial expired data', () => {
+    test('clean initial expired data', async () => {
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10))
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({}))
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc')
         localStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10))
 
-        return tuaStorage._clearExpiredData()
-            .then(() => {
-                expect(getObjLen(store)).toBe(3)
-                expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeUndefined()
-            })
+        await tuaStorage._clearExpiredData()
+
+        expect(getObjLen(store)).toBe(3)
+        expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeUndefined()
     })
 
     test('disable auto clean initial expired data', () => {
@@ -117,36 +113,33 @@ describe('initial state', () => {
         expect(store[`${DEFAULT_KEY_PREFIX}1`]).toBeDefined()
     })
 
-    test('clear items not match prefix', () => {
+    test('clear items not match prefix', async () => {
         localStorage.setItem('b', '666')
         localStorage.setItem('steve', '1217')
         localStorage.setItem(DEFAULT_KEY_PREFIX, '666')
 
-        return tuaStorage.clear(['steve', DEFAULT_KEY_PREFIX])
-            .then(() => {
-                expect(getObjLen(store)).toBe(2)
-                expect(store['steve']).toBe('1217')
-                expect(store[DEFAULT_KEY_PREFIX]).toBe('666')
-            })
+        await tuaStorage.clear(['steve', DEFAULT_KEY_PREFIX])
+
+        expect(getObjLen(store)).toBe(2)
+        expect(store['steve']).toBe('1217')
+        expect(store[DEFAULT_KEY_PREFIX]).toBe('666')
     })
 })
 
-describe('save/load/clear/remove', () => {
+describe('async methods', () => {
     afterEach(() => {
         localStorage.clear()
         cache = tuaStorage._cache = {}
     })
 
-    test('never save data which is destined to expired', () => (
-        tuaStorage
-            .save({ key, data, syncParams, expires: 0 })
-            .then(() => {
-                expect(getObjLen(cache)).toBe(0)
-                expect(getObjLen(store)).toBe(0)
-            })
-    ))
+    test('never save data which is destined to expired', async () => {
+        await tuaStorage.save({ key, data, syncParams, expires: 0 })
 
-    test('concurrent load one inexistent item with syncFn', () => {
+        expect(getObjLen(cache)).toBe(0)
+        expect(getObjLen(store)).toBe(0)
+    })
+
+    test('concurrent load one inexistent item with syncFn', async () => {
         const itemTobeLoaded = {
             key,
             syncFn: () => Promise.resolve({ data }),
@@ -154,39 +147,39 @@ describe('save/load/clear/remove', () => {
         const targetKey = getTargetKey(itemTobeLoaded.key)
         const expectedVal = getExpectedValBySyncFn(data)
 
-        return Promise.all([
+        const loadedItems = await Promise.all([
             tuaStorage.load(itemTobeLoaded),
             tuaStorage.load(itemTobeLoaded),
             tuaStorage.load(itemTobeLoaded),
-        ]).then((loadedItems) => {
-            loadedItems.map(({ code, data: loadedData }) => {
-                expect(code).toBe(0)
-                expect(loadedData).toBe(data)
-            })
+        ])
 
-            // cache
-            expect(getObjLen(cache)).toBe(1)
-            expect(stringify(cache[targetKey])).toBe(expectedVal)
-
-            // storage
-            expect(getObjLen(store)).toBe(1)
-            expect(store[targetKey]).toBe(expectedVal)
-            expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
-
-            expect(localStorage.setItem).toHaveBeenCalledTimes(1)
+        loadedItems.forEach(({ code, data: loadedData }) => {
+            expect(code).toBe(0)
+            expect(loadedData).toBe(data)
         })
+
+        // cache
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
+
+        // storage
+        expect(getObjLen(store)).toBe(1)
+        expect(store[targetKey]).toBe(expectedVal)
+        expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
+
+        expect(localStorage.setItem).toHaveBeenCalledTimes(1)
     })
 
     test('syncFn fail', () => {
-        const itemTobeLoaded = {
+        const promise = tuaStorage.load({
             key: 'inexistent data',
             syncFn: () => Promise.reject(Error(data)),
-        }
+        })
 
-        return expect(tuaStorage.load(itemTobeLoaded)).rejects.toThrowError(data)
+        expect(promise).rejects.toThrowError(data)
     })
 
-    test('load some exist items with one key and disable cache', () => {
+    test('load some exist items with one key and disable cache', async () => {
         const dataArr = [
             { key, data: '+1s', expires: 10, isEnableCache: false },
             { key, data: 1217, isEnableCache: false },
@@ -195,50 +188,48 @@ describe('save/load/clear/remove', () => {
         const targetKey = getTargetKey(key)
         const expectedVal = getExpectedVal(data)
 
-        return tuaStorage
-            .save(dataArr)
-            .then(() => tuaStorage.load(dataArr))
-            .then((loadedItems) => {
-                loadedItems.map((loadedItem) => {
-                    // load function returns rawData
-                    expect(loadedItem).toBe(data)
+        await tuaStorage.save(dataArr)
+        const loadedItems = await tuaStorage.load(dataArr)
 
-                    // cache
-                    expect(getObjLen(cache)).toBe(0)
-                    expect(stringify(cache[targetKey])).toBeUndefined()
+        loadedItems.forEach((loadedItem) => {
+            // load function returns rawData
+            expect(loadedItem).toBe(data)
 
-                    // storage
-                    expect(getObjLen(store)).toBe(1)
-                    expect(store[targetKey]).toBe(expectedVal)
-                    expect(localStorage.setItem).lastCalledWith(targetKey, expectedVal)
-                })
-            })
+            // cache
+            expect(getObjLen(cache)).toBe(0)
+            expect(stringify(cache[targetKey])).toBeUndefined()
+
+            // storage
+            expect(getObjLen(store)).toBe(1)
+            expect(store[targetKey]).toBe(expectedVal)
+            expect(localStorage.setItem).lastCalledWith(targetKey, expectedVal)
+        })
     })
 
-    test('remove some undefined items', () => {
+    test('remove some undefined items', async () => {
         const keyArr = ['item key1', 'item key2', 'item key3']
         const targetKey = getTargetKey(key)
         const expectedVal = getExpectedVal(data)
 
-        return tuaStorage
-            .save({ key, data })
-            .then(() => tuaStorage.remove(keyArr))
-            .then(() => {
-                // cache
-                expect(getObjLen(cache)).toBe(1)
-                expect(stringify(cache[targetKey])).toBe(expectedVal)
+        await tuaStorage.save({ key, data })
+        await tuaStorage.remove(keyArr)
 
-                // storage
-                expect(getObjLen(store)).toBe(1)
-                expect(store[targetKey]).toBe(expectedVal)
-                expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
-                keyArr.forEach(key =>
-                    expect(localStorage.removeItem).toBeCalledWith(getTargetKey(key))
-                )
+        // cache
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
+
+        // storage
+        expect(getObjLen(store)).toBe(1)
+        expect(store[targetKey]).toBe(expectedVal)
+        expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
+        keyArr
+            .map(getTargetKey)
+            .forEach((targetKey) => {
+                expect(localStorage.removeItem).toBeCalledWith(targetKey)
             })
     })
 
-    test('clear some items by whiteList', () => {
+    test('clear some items by whiteList', async () => {
         const kdArr = [
             { key: 'cmm-1', data: 'string' },
             { key: 'cmm-2', data: 1217 },
@@ -249,47 +240,43 @@ describe('save/load/clear/remove', () => {
         const whiteList = ['3', '4', '5']
         const expectedValues = kdArr.map(({ data }) => getExpectedVal(data))
 
-        return Promise
-            .all(kdArr.map(({ key, data }) => tuaStorage.save({ key, data })))
-            .then(() => tuaStorage.clear(whiteList))
-            .then(() => {
-                kdArr.map(({ key }, idx) => {
-                    const targetKey = getTargetKey(key)
-                    const expectedVal = expectedValues[idx]
-                    const isInWhiteList = whiteList
-                        .some(targetKey.includes.bind(targetKey))
+        await Promise.all(kdArr.map(tuaStorage.save.bind(tuaStorage)))
+        await tuaStorage.clear(whiteList)
 
-                    // cache
-                    expect(getObjLen(cache)).toBe(whiteList.length)
-                    isInWhiteList
-                        ? expect(stringify(cache[targetKey])).toBe(expectedVal)
-                        : expect(cache[targetKey]).toBeUndefined()
+        kdArr.forEach(({ key }, idx) => {
+            const targetKey = getTargetKey(key)
+            const expectedVal = expectedValues[idx]
+            const isInWhiteList = whiteList
+                .some(targetKey.includes.bind(targetKey))
 
-                    // storage
-                    expect(getObjLen(store)).toBe(whiteList.length)
-                    expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
+            // cache
+            expect(getObjLen(cache)).toBe(whiteList.length)
+            isInWhiteList
+                ? expect(stringify(cache[targetKey])).toBe(expectedVal)
+                : expect(cache[targetKey]).toBeUndefined()
 
-                    if (isInWhiteList) {
-                        expect(store[targetKey]).toBe(expectedVal)
-                    } else {
-                        expect(store[targetKey]).toBeUndefined()
-                        expect(localStorage.removeItem).toBeCalledWith(targetKey)
-                    }
-                })
-            })
+            // storage
+            expect(getObjLen(store)).toBe(whiteList.length)
+            expect(localStorage.setItem).toBeCalledWith(targetKey, expectedVal)
+
+            if (isInWhiteList) {
+                expect(store[targetKey]).toBe(expectedVal)
+            } else {
+                expect(store[targetKey]).toBeUndefined()
+                expect(localStorage.removeItem).toBeCalledWith(targetKey)
+            }
+        })
     })
 
-    test('get storage info', () => (
-        tuaStorage
-            .save({ key, data })
-            .then(tuaStorage.getInfo.bind(tuaStorage))
-            .then(({ keys }) => {
-                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
-            })
-    ))
+    test('get storage info', async () => {
+        await tuaStorage.save({ key, data })
+        const { keys } = await tuaStorage.getInfo()
+
+        expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+    })
 })
 
-describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
+describe('sync methods', () => {
     afterEach(() => {
         localStorage.clear()
         cache = tuaStorage._cache = {}
@@ -354,7 +341,7 @@ describe('saveSync/loadSync/clearSync/removeSync/getInfoSync', () => {
         ]
         const whiteList = ['3', '4', '5']
         const expectedValues = kdArr.map(({ data }) => getExpectedVal(data))
-        kdArr.map(({ key, data }) => tuaStorage.saveSync({ key, data }))
+        kdArr.map(tuaStorage.saveSync.bind(tuaStorage))
         tuaStorage.clearSync(whiteList)
 
         kdArr.map(({ key }, idx) => {

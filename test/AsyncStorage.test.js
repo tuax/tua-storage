@@ -41,35 +41,32 @@ describe('timers', () => {
         Date.now = jest.fn(() => +new Date())
     })
 
-    test('setInterval to clean expired data', () => (
-        tuaStorage
-            .save([
-                { key: `${key}1`, data, syncParams, expires: 10 },
-                { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
-                { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
-            ])
-            .then(() => {
-                Date.now = jest.fn(() => TIME_OUT + (+new Date()))
-                jest.advanceTimersByTime(TIME_OUT)
+    test('setInterval to clean expired data', async () => {
+        await tuaStorage.save([
+            { key: `${key}1`, data, syncParams, expires: 10 },
+            { key: `${key}2`, data, syncParams, expires: TIME_OUT * 1.5 / 1000 },
+            { key: `${key}3`, data, syncParams, expires: TIME_OUT * 2.5 / 1000 },
+        ])
 
-                // 因为删除是异步操作
-                setImmediate(() => {
-                    expect(getObjLen(cache)).toBe(2)
-                    expect(store.size).toBe(2)
-                    expect(store.get(getTargetKey(`${key}1`))).toBeUndefined()
-                })
-            })
-            .then(() => {
-                Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
-                jest.advanceTimersByTime(TIME_OUT * 2)
+        Date.now = jest.fn(() => TIME_OUT + (+new Date()))
+        jest.advanceTimersByTime(TIME_OUT)
 
-                // 因为删除是异步操作
-                setImmediate(() => {
-                    expect(getObjLen(cache)).toBe(1)
-                    expect(store.size).toBe(1)
-                })
-            })
-    ))
+        // 因为删除是异步操作
+        setImmediate(() => {
+            expect(getObjLen(cache)).toBe(2)
+            expect(store.size).toBe(2)
+            expect(store.get(getTargetKey(`${key}1`))).toBeUndefined()
+        })
+
+        Date.now = jest.fn(() => TIME_OUT * 2 + (+new Date()))
+        jest.advanceTimersByTime(TIME_OUT * 2)
+
+        // 因为删除是异步操作
+        setImmediate(() => {
+            expect(getObjLen(cache)).toBe(1)
+            expect(store.size).toBe(1)
+        })
+    })
 })
 
 describe('initial state', () => {
@@ -78,110 +75,95 @@ describe('initial state', () => {
         AsyncStorage.clear()
     })
 
-    test('clean initial expired data', () => (
-        Promise
-            .all([
-                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10)),
-                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({})),
-                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc'),
-                AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10)),
-            ])
-            .then(tuaStorage._clearExpiredData.bind(tuaStorage))
-            .then(() => {
-                const store = AsyncStorage.getStore()
+    test('clean initial expired data', async () => {
+        await Promise.all([
+            AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}1`, getExpectedVal(data, -10)),
+            AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}2`, stringify({})),
+            AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}3`, 'abc'),
+            AsyncStorage.setItem(`${DEFAULT_KEY_PREFIX}4`, getExpectedVal(data, 10)),
+        ])
+        await tuaStorage._clearExpiredData()
 
-                expect(store.size).toBe(3)
-                expect(store.get(`${DEFAULT_KEY_PREFIX}1`)).toBeUndefined()
-            })
-    ))
+        const store = AsyncStorage.getStore()
 
-    test('clear items not match prefix', () => (
-        Promise
-            .all([
-                AsyncStorage.setItem('b', '666'),
-                AsyncStorage.setItem('steve', '1217'),
-                AsyncStorage.setItem(DEFAULT_KEY_PREFIX, '666'),
-            ])
-            .then(() => (
-                tuaStorage.clear(['steve', DEFAULT_KEY_PREFIX])
-            ))
-            .then(() => {
-                const store = AsyncStorage.getStore()
+        expect(store.size).toBe(3)
+        expect(store.get(`${DEFAULT_KEY_PREFIX}1`)).toBeUndefined()
+    })
 
-                expect(store.size).toBe(2)
-                expect(store.get('steve')).toBe('1217')
-                expect(store.get(DEFAULT_KEY_PREFIX)).toBe('666')
-            })
-    ))
+    test('clear items not match prefix', async () => {
+        await Promise.all([
+            AsyncStorage.setItem('b', '666'),
+            AsyncStorage.setItem('steve', '1217'),
+            AsyncStorage.setItem(DEFAULT_KEY_PREFIX, '666'),
+        ])
+        await tuaStorage.clear(['steve', DEFAULT_KEY_PREFIX])
+
+        const store = AsyncStorage.getStore()
+
+        expect(store.size).toBe(2)
+        expect(store.get('steve')).toBe('1217')
+        expect(store.get(DEFAULT_KEY_PREFIX)).toBe('666')
+    })
 })
 
-describe('save/load/remove', () => {
+describe('async methods', () => {
     afterEach(() => {
         cache = tuaStorage._cache = {}
         AsyncStorage.clear()
     })
 
-    test('never save data which is destined to expired', () => (
-        tuaStorage
-            .save({ key, data, syncParams, expires: 0 })
-            .then(() => {
-                const store = AsyncStorage.getStore()
+    test('never save data which is destined to expired', async () => {
+        await tuaStorage.save({ key, data, syncParams, expires: 0 })
+        const store = AsyncStorage.getStore()
 
-                expect(getObjLen(cache)).toBe(0)
-                expect(store.size).toBe(0)
-            })
-    ))
-
-    test('load one exist item without cache', () => {
-        const expectedVal = getExpectedVal(data)
-
-        return tuaStorage
-            .save({ key, data })
-            .then(() => tuaStorage.load({ key, isEnableCache: false }))
-            .then((loadedData) => {
-                // load function returns rawData
-                expect(loadedData).toBe(data)
-
-                const store = AsyncStorage.getStore()
-
-                // cache
-                expect(getObjLen(cache)).toBe(1)
-                expect(stringify(cache[targetKey])).toBe(expectedVal)
-
-                // storage
-                expect(store.size).toBe(1)
-                expect(stringify(store.get(targetKey))).toBe(expectedVal)
-            })
+        expect(getObjLen(cache)).toBe(0)
+        expect(store.size).toBe(0)
     })
 
-    test('remove some undefined items', () => {
+    test('load one exist item without cache', async () => {
+        const expectedVal = getExpectedVal(data)
+
+        await tuaStorage.save({ key, data })
+        const loadedData = await tuaStorage.load({ key, isEnableCache: false })
+
+        // load function returns rawData
+        expect(loadedData).toBe(data)
+
+        const store = AsyncStorage.getStore()
+
+        // cache
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
+
+        // storage
+        expect(store.size).toBe(1)
+        expect(stringify(store.get(targetKey))).toBe(expectedVal)
+    })
+
+    test('remove some undefined items', async () => {
         const expectedVal = getExpectedVal(data)
         const keyArr = ['item key1', 'item key2', 'item key3']
 
-        return tuaStorage
-            .save({ key, data })
-            .then(() => tuaStorage.remove(keyArr))
-            .then(() => {
-                const store = AsyncStorage.getStore()
+        await tuaStorage.save({ key, data })
+        await tuaStorage.remove(keyArr)
 
-                // cache
-                expect(getObjLen(cache)).toBe(1)
-                expect(stringify(cache[targetKey])).toBe(expectedVal)
+        const store = AsyncStorage.getStore()
 
-                // storage
-                expect(store.size).toBe(1)
-                expect(stringify(store.get(targetKey))).toBe(expectedVal)
-            })
+        // cache
+        expect(getObjLen(cache)).toBe(1)
+        expect(stringify(cache[targetKey])).toBe(expectedVal)
+
+        // storage
+        expect(store.size).toBe(1)
+        expect(stringify(store.get(targetKey))).toBe(expectedVal)
     })
 
-    test('get storage info', () => (
-        tuaStorage
-            .save({ key, data })
-            .then(tuaStorage.getInfo.bind(tuaStorage))
-            .then(({ keys }) => {
-                expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
-            })
-    ))
+    test('get storage info', async () => {
+        await tuaStorage.save({ key, data })
+        const { keys } = await tuaStorage.getInfo()
+
+        expect(keys).toEqual([`TUA_STORAGE_PREFIX: ${key}`])
+    })
 })
 
 describe('error handling', () => {
