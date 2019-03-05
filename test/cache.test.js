@@ -190,6 +190,34 @@ describe('save/load/remove', () => {
         cache = tuaStorage._cache = {}
     })
 
+    describe('syncOptions', () => {
+        const syncFn = (...args) => Promise.resolve(args)
+
+        test('should pass syncOptions', async () => {
+            const syncOptions = 'syncOptions'
+            const { data } = await tuaStorage.load({
+                key,
+                syncFn,
+                syncOptions,
+            })
+
+            expect(data.length).toBe(2)
+            expect(data[1]).toBe(syncOptions)
+        })
+
+        test('should apply syncOptions when it is an array', async () => {
+            const syncOptions = [1, 2, 3]
+            const { data } = await tuaStorage.load({
+                key,
+                syncFn,
+                syncOptions,
+            })
+
+            expect(data.length).toBe(syncOptions.length + 1)
+            expect(data.slice(1)).toEqual(syncOptions)
+        })
+    })
+
     test('force update data when isForceUpdate is true', () => (
         tuaStorage
             .load({

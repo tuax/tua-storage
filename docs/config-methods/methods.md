@@ -165,6 +165,24 @@ async () => {
 
 调用同步函数时传递参数。
 
+### syncOptions 同步函数配置 <Badge text="1.7.0+"/>
+* 类型：`Any`
+* 默认值：`[]`
+
+因为 `syncFn` 默认只接受 `syncParams` 作为参数，在使用时不太方便。尤其是搭配 [tua-api](https://tuateam.github.io/tua-api/) 使用时，没法方便地传递 [运行时配置](https://tuateam.github.io/tua-api/config/runtime.html)。
+
+因此添加了 `syncOptions` 用于传递 `syncFn` 函数的其他参数。
+
+当 `syncOptions` 类型为数组时，以这样的方式调用。
+
+```js
+syncFn.apply(null, [syncParams, ...syncOptions])
+```
+
+即数组的各个元素分别作为 `syncFn` 的第二个到第 n 个参数。
+
+其他类型时，以这样的方式调用 `syncFn(syncParams, syncOptions)`，即作为第二个参数。
+
 ### fullKey 完整关键词
 * 类型：`String`
 * 默认值：`''`
