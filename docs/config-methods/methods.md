@@ -176,7 +176,7 @@ async () => {
 当 `syncOptions` 类型为数组时，以这样的方式调用。
 
 ```js
-syncFn.apply(null, [syncParams, ...syncOptions])
+syncFn(syncParams, ...syncOptions)
 ```
 
 即数组的各个元素分别作为 `syncFn` 的第二个到第 n 个参数。
