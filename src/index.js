@@ -464,6 +464,7 @@ class TuaStorage {
      * @param {Number} item.expires 超时时间（单位：秒）
      * @param {Object} item.cacheData 缓存数据
      * @param {Object} item.syncParams 同步参数对象
+     * @param {Object} item.syncOptions 同步函数配置
      * @param {Boolean} item.isAutoSave 是否自动保存
      * @return {Promise}
      */
@@ -473,6 +474,7 @@ class TuaStorage {
         expires,
         cacheData,
         syncParams,
+        syncOptions = [],
         isAutoSave = true,
     }) {
         const isNoCacheData = cacheData === null || cacheData === undefined
@@ -485,7 +487,6 @@ class TuaStorage {
 
                 if (err) {
                     logger.error(err)
-
                     return pRej(err)
                 }
             }
@@ -493,7 +494,9 @@ class TuaStorage {
             // 如果有相同的任务，则共用该任务
             if (sameTask) return sameTask.task
 
-            const originTask = syncFn(syncParams)
+            const originTask = Array.isArray(syncOptions)
+                ? syncFn(syncParams, ...syncOptions)
+                : syncFn(syncParams, syncOptions)
             const isPromise = !!(originTask && originTask.then)
 
             if (!isPromise) return pRej(Error(ERROR_MSGS.promise))

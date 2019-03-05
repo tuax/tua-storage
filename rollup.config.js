@@ -1,5 +1,6 @@
 import json from 'rollup-plugin-json'
 import babel from 'rollup-plugin-babel'
+import replace from 'rollup-plugin-replace'
 import { eslint } from 'rollup-plugin-eslint'
 import { uglify } from 'rollup-plugin-uglify'
 
@@ -33,16 +34,28 @@ const plugins = [
     json(),
     babel(),
 ]
+const env = 'process.env.NODE_ENV'
 
 export default [{
     input,
-    output: [ output.cjs, output.esm, output.umd ],
+    output: [ output.cjs, output.esm ],
     plugins,
+}, {
+    input,
+    output: output.umd,
+    plugins: [
+        ...plugins,
+        replace({ [env]: '"development"' }),
+    ],
 }, {
     input,
     output: {
         ...output.umd,
         file: 'dist/TuaStorage.umd.min.js',
     },
-    plugins: [ ...plugins, uglify() ],
+    plugins: [
+        ...plugins,
+        replace({ [env]: '"production"' }),
+        uglify(),
+    ],
 }]

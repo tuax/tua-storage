@@ -4,8 +4,9 @@
  * @param {any} out 具体的输出内容
  */
 const logByType = (type) => (...out) => {
-    /* istanbul ignore else */
-    if (process.env.NODE_ENV === 'test') return
+    const env = process.env.NODE_ENV
+    /* istanbul ignore next */
+    if (env === 'test' || env === 'production') return
 
     /* istanbul ignore next */
     console[type](`[TUA-STORAGE]:`, ...out)
