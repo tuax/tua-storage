@@ -18,9 +18,9 @@ api 分为两个部分来说明：
 * load
 * clear
 * remove
-* getInfo
-* saveSync
-* loadSync
-* clearSync
-* removeSync
-* getInfoSync
+* getInfo <Badge text="1.5.0+"/>
+* saveSync <Badge text="1.5.0+"/>
+* loadSync <Badge text="1.5.0+"/>
+* clearSync <Badge text="1.5.0+"/>
+* removeSync <Badge text="1.5.0+"/>
+* getInfoSync <Badge text="1.5.0+"/>

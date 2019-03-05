@@ -109,7 +109,7 @@ tuaStorage.save([{
 ```
 :::
 
-## saveSync 同步保存
+## saveSync 同步保存 <Badge text="1.5.0+"/>
 save 方法的同步版本，在不支持同步方法的场景（AsyncStorage）下会抛出错误。
 
 ```js
@@ -189,7 +189,7 @@ async () => {
 
 默认为 true，是否优先读取内存。
 
-### isForceUpdate 是否直接调用 syncFn
+### isForceUpdate 是否直接调用 syncFn <Badge text="1.4.0+"/>
 * 类型：`Boolean`
 * 默认值：`false`
 
@@ -199,7 +199,7 @@ async () => {
 别忘了还可以传递数组，读取多个数据哟~将会以 `Promise.all` 的形式调用。
 :::
 
-## loadSync 同步读取
+## loadSync 同步读取 <Badge text="1.5.0+"/>
 load 方法的同步版本，在不支持同步方法的场景（AsyncStorage）下会抛出错误。
 
 ```js
@@ -258,7 +258,7 @@ tuaStorage.remove({ fullKey: 'data key' })
 别忘了还可以传递数组，删除多个数据哟~
 :::
 
-## removeSync 同步删除
+## removeSync 同步删除 <Badge text="1.5.0+"/>
 remove 方法的同步版本，在不支持同步方法的场景（AsyncStorage）下会抛出错误。
 
 ```js
@@ -310,7 +310,7 @@ tuaStorage.clear(['key'])
 因为内部是通过 `indexOf` 来判断的，所以不必填写完整的 `key` 值。
 :::
 
-## clearSync 同步清除
+## clearSync 同步清除 <Badge text="1.5.0+"/>
 clear 方法的同步版本，在不支持同步方法的场景（AsyncStorage）下会抛出错误。
 
 ```js
@@ -321,10 +321,10 @@ try {
 }
 ```
 
-## getInfo 获取相关信息
+## getInfo 获取相关信息 <Badge text="1.5.0+"/>
 异步获取当前 storage 的相关信息。
 
-## getInfoSync 同步获取相关信息
+## getInfoSync 同步获取相关信息 <Badge text="1.5.0+"/>
 getInfo 方法的同步版本，在不支持同步方法的场景（AsyncStorage）下会抛出错误。
 
 ```js

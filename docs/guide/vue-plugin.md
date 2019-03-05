@@ -1,4 +1,4 @@
-# 在 Vue 中使用 tua-storage
+# 在 Vue 中使用 tua-storage <Badge text="1.6.0+"/>
 ## 代码示例
 
 ```js
