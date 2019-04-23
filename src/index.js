@@ -501,31 +501,27 @@ class TuaStorage {
 
             if (!isPromise) return pRej(Error(ERROR_MSGS.promise))
 
-            // 格式化数据结构
-            const formatDataStructure = (data) => (data.code == null && data.data == null)
-                ? { data }
-                : data
-
-            // 格式化数据类型
-            const formatDataType = ({ code = 0, data }) => ({ code: +code, data })
+            // 格式化数据结构和类型
+            const formatData = (data) => (data.code == null && data.data == null)
+                ? { code: 0, data }
+                : { ...data, code: +data.code || 0 }
 
             const task = originTask
-                .then(formatDataStructure)
-                .then(formatDataType)
-                .then(({ code, data }) => {
+                .then(formatData)
+                .then(({ code, ...rest }) => {
                     // 应该首先删除任务
                     finallyRemoveTask()
 
-                    if (code !== 0 || !isAutoSave) return { code, data }
+                    if (code !== 0 || !isAutoSave) return { code, ...rest }
 
                     this.save({
                         // 防止无限添加前缀
                         key: key.replace(this.storageKeyPrefix, ''),
-                        data: { code, data },
+                        data: { code, ...rest },
                         expires,
                     }).catch(logger.error)
 
-                    return { code, data }
+                    return { code, ...rest }
                 })
                 .catch(finallyRemoveTask)
 
@@ -550,9 +546,9 @@ class TuaStorage {
         // 若数据未过期，则直接用缓存数据，
         // 否则调用同步数据函数，若没有同步函数则返回错误
         return isDataExpired
-            ? !syncFn
-                ? syncRejectFn()
-                : syncResolveFn()
+            ? syncFn
+                ? syncResolveFn()
+                : syncRejectFn()
             : pRes(rawData)
     }
 
