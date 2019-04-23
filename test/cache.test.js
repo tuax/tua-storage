@@ -231,6 +231,16 @@ describe('async methods', () => {
                 expect(stringify(cache[targetKey])).toBeUndefined()
             })
         })
+
+        test('load data except code/data', async () => {
+            const msg = 'this is msg'
+            const syncFn = () => Promise.resolve({ code: 1, data, msg })
+            const loadedData = await tuaStorage.load({ key, syncFn })
+
+            expect(loadedData.code).toBe(1)
+            expect(loadedData.data).toEqual(data)
+            expect(loadedData.msg).toEqual(msg)
+        })
     })
 
     describe('remove and clear only', () => {
