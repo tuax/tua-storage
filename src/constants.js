@@ -1,3 +1,5 @@
+// @ts-check
+
 export const ERROR_MSGS = {
     key: 'Please input key or fullKey!',
     promise: 'SyncFn MUST return a Promise!',

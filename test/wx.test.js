@@ -1,3 +1,5 @@
+// @ts-check
+
 import WxCls from './wxMock'
 
 import TuaStorage from '@/index'

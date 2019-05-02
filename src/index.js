@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @file: 对外暴露以下方法：
  *   1.构造函数：用于初始化 TuaStorage
@@ -29,7 +31,8 @@ import {
     stringify,
     getFullKey,
     getDataToSave,
-    supportArrayParam,
+    syncArrayParams,
+    asyncArrayParams,
     getParamStrFromObj,
 } from './utils'
 import {
@@ -45,6 +48,17 @@ import formatMethodsByWX from './storageEngines/wxStorage'
 logger.log(`Version: ${version}`)
 
 class TuaStorage {
+    /**
+     * @param {object} [args]
+     * @param {string[]} [args.whiteList = []] 白名单数组
+     * @param {object} [args.syncFnMap = {}] 同步函数对象
+     * @param {object} [args.storageEngine = null] 存储引擎
+     * @param {number} [args.defaultExpires = DEFAULT_EXPIRES] 默认过期时间
+     * @param {any} [args.neverExpireMark = null] 永不过期的标志
+     * @param {string} [args.storageKeyPrefix = DEFAULT_KEY_PREFIX] 默认存储前缀
+     * @param {number} [args.autoClearTime = 60] 默认自动清理时间
+     * @param {boolean} [args.isEnableAutoClear = true] 是否自动清理过期数据
+     */
     constructor ({
         whiteList = [],
         syncFnMap = Object.create(null),
@@ -83,16 +97,19 @@ class TuaStorage {
 
     /**
      * 异步保存数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {Object|String|Number} items.data 待保存数据
-     * @param {Number} items.expires 超时时间（单位：秒）
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @param {Boolean} items.isEnableCache 是否使用内存缓存
+     * @param {object} item 可以是(`object|object[]`)
+     * @param {string} [item.key] 前缀
+     * @param {any} item.data 待保存数据
+     * @param {number} [item.expires] 超时时间（单位：秒）
+     * @param {string} [item.fullKey] 完整关键词
+     * @param {object} [item.syncParams] 同步参数对象
+     * @param {boolean} [item.isEnableCache = true] 是否使用内存缓存
+     * @param {object} [item.dataToSave] 由 `@getDataToSave` 生成
+     * @param {any} item.dataToSave.rawData 待保存数据
+     * @param {number} item.dataToSave.expires 超时时间（单位：秒）
      * @return {Promise}
      */
-    @supportArrayParam()
+    @asyncArrayParams
     @checkKey
     @getFullKey
     @getDataToSave
@@ -110,16 +127,18 @@ class TuaStorage {
 
     /**
      * 同步保存数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {Object|String|Number} items.data 待保存数据
-     * @param {Number} items.expires 超时时间（单位：秒）
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @param {Boolean} items.isEnableCache 是否使用内存缓存
-     * @return {Promise}
+     * @param {object} item 可以是(`object|object[]`)
+     * @param {string} item.key 前缀
+     * @param {any} item.data 待保存数据
+     * @param {number} item.expires 超时时间（单位：秒）
+     * @param {string} item.fullKey 完整关键词
+     * @param {object} item.syncParams 同步参数对象
+     * @param {boolean} [item.isEnableCache = true] 是否使用内存缓存
+     * @param {object} [item.dataToSave] 由 `@getDataToSave` 生成
+     * @param {any} item.dataToSave.rawData 待保存数据
+     * @param {number} item.dataToSave.expires 超时时间（单位：秒）
      */
-    @supportArrayParam()
+    @asyncArrayParams
     @checkKey
     @getFullKey
     @getDataToSave
@@ -143,39 +162,39 @@ class TuaStorage {
 
     /**
      * 异步读取数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {Function} items.syncFn 同步数据的方法
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @param {Number} items.expires 超时时间（单位：秒）
-     * @param {Boolean} items.isAutoSave 是否自动保存
-     * @param {Boolean} items.isEnableCache 是否使用内存缓存
-     * @param {Boolean} items.isForceUpdate 是否直接调用 syncFn
+     * @param {object} item 可以是(`object|object[]`)
+     * @param {string} item.key 前缀
+     * @param {function} [item.syncFn] 同步数据的方法
+     * @param {string} [item.fullKey] 完整关键词
+     * @param {object} [item.syncParams] 同步参数对象
+     * @param {number} [item.expires] 超时时间（单位：秒）
+     * @param {boolean} [item.isAutoSave] 是否自动保存
+     * @param {boolean} [item.isEnableCache] 是否使用内存缓存
+     * @param {boolean} [item.isForceUpdate] 是否直接调用 syncFn
+     * @param {string} item.prefix 由 `@getFullKey` 生成（也就是原始的 key，而 key 变成了完整的 key）
      * @return {Promise}
      */
-    @supportArrayParam()
+    @asyncArrayParams
     @checkKey
     @getFullKey
     load ({
         key,
         prefix,
         syncFn = this.syncFnMap[prefix],
-        syncParams,
         ...rest
     }) {
-        return this._findData({ key, syncFn, syncParams, ...rest })
+        return this._findData({ key, syncFn, ...rest })
     }
 
     /**
      * 同步读取数据，可传递数组或单对象
-     * @param {Array|Object} items
-     * @param {String} items.key 前缀
-     * @param {String} items.fullKey 完整关键词
-     * @param {Object} items.syncParams 同步参数对象
-     * @return {Promise}
+     * @param {object} item
+     * @param {string} item.key 前缀
+     * @param {string} item.fullKey 完整关键词
+     * @param {object} item.syncParams 同步参数对象
+     * @param {boolean} [item.isEnableCache = true] 是否使用内存缓存
      */
-    @supportArrayParam(false)
+    @syncArrayParams
     @checkKey
     @getFullKey
     loadSync ({ key, isEnableCache = true }) {
@@ -193,8 +212,8 @@ class TuaStorage {
     }
 
     /**
-     * 异步清除非白名单中的所有缓存数据
-     * @param {String[]} whiteList 白名单
+     * 异步清除非白名单数组中的所有缓存数据
+     * @param {string[]} [whiteList = []] 白名单数组
      * @return {Promise}
      */
     clear (whiteList = []) {
@@ -205,9 +224,8 @@ class TuaStorage {
     }
 
     /**
-     * 同步清除非白名单中的所有缓存数据
-     * @param {String[]} whiteList 白名单
-     * @return {Promise}
+     * 同步清除非白名单数组中的所有缓存数据
+     * @param {string[]} [whiteList = []] 白名单数组
      */
     clearSync (whiteList = []) {
         // 首先清除缓存
@@ -217,12 +235,11 @@ class TuaStorage {
 
     /**
      * 异步删除数据，可传递数组或字符串或单对象(fullKey)
-     * @param {String[]|String|Object} items
-     * @param {String|Object} items.prefix 数据前缀
-     * @param {String} items.prefix.fullKey 完整的数据前缀
+     * @param {object} prefix 数据前缀（可以是 `object|string|string[]|object[]`）
+     * @param {string} [prefix.fullKey] 完整的数据前缀（对象）
      * @return {Promise}
      */
-    @supportArrayParam()
+    @asyncArrayParams
     @checkKey
     remove (prefix) {
         const fullKey = typeof prefix === 'object'
@@ -237,20 +254,19 @@ class TuaStorage {
 
     /**
      * 同步删除数据，可传递数组或字符串或单对象(fullKey)
-     * @param {String[]|String|Object} items
-     * @param {String|Object} items.prefix 数据前缀
-     * @param {String} items.prefix.fullKey 完整的数据前缀
-     * @return {Promise}
+     * @param {object} prefix 数据前缀（可以是 `object|string|string[]|object[]`）
+     * @param {string} [prefix.fullKey] 完整的数据前缀（对象）
      */
-    @supportArrayParam()
+    @syncArrayParams
     @checkKey
     removeSync (prefix) {
         const fullKey = typeof prefix === 'object'
             ? prefix.fullKey
             : ''
-        const key = fullKey || this.storageKeyPrefix + prefix
 
+        const key = fullKey || this.storageKeyPrefix + prefix
         delete this._cache[key]
+
         this.SEMethods._removeItemSync(key)
     }
 
@@ -277,8 +293,8 @@ class TuaStorage {
     }
 
     /**
-     * 清除 cache 中非白名单中的数据
-     * @param {String[]} whiteList 白名单
+     * 清除 cache 中非白名单数组中的数据
+     * @param {string[]} whiteList 白名单数组
      */
     _clearFromCache (whiteList) {
         const allCacheKeys = this._getAllCacheKeys()
@@ -320,10 +336,11 @@ class TuaStorage {
 
     /**
      * 从 cache 中寻找数据，如果没寻找到则读取 storage
-     * @param {Object} item
-     * @param {String} item.key 前缀
-     * @param {Boolean} item.isEnableCache 是否启用 cache
-     * @param {Boolean} item.isForceUpdate 是否直接调用 syncFn
+     * @param {object} item
+     * @param {string} item.key 前缀
+     * @param {function} [item.syncFn] 同步数据的方法
+     * @param {boolean} [item.isEnableCache = true] 是否启用 cache
+     * @param {boolean} [item.isForceUpdate = false] 是否直接调用 syncFn
      * @return {Promise}
      */
     _findData ({
@@ -352,7 +369,7 @@ class TuaStorage {
 
     /**
      * 统一规范化 wx、localStorage、AsyncStorage 三种存储引擎的调用方法
-     * @return {Object | Null}
+     * @return {object | null}
      */
     _getSEMethods () {
         const noop = () => {}
@@ -423,9 +440,8 @@ class TuaStorage {
     }
 
     /**
-     * 获取过滤白名单后的 keys
-     * @param {String[]} whiteList 白名单
-     * @return {Function}
+     * 获取过滤白名单数组后的 keys
+     * @param {string[]} whiteList 白名单数组
      */
     _getKeysByWhiteList (whiteList) {
         const mergedWhiteList = [
@@ -433,7 +449,7 @@ class TuaStorage {
             ...this.whiteList,
         ]
 
-        return keys => keys.filter(
+        return (keys) => keys.filter(
             key => mergedWhiteList
                 .every(item => key.indexOf(item) === -1)
         )
@@ -441,9 +457,10 @@ class TuaStorage {
 
     /**
      * 根据前缀和同步参数，获取完整请求关键词字符串
-     * @param {String} prefix 前缀
-     * @param {Object} syncParams 同步参数对象
-     * @return {String} 完整请求关键词字符串
+     * @param {object} item
+     * @param {string} item.prefix 前缀
+     * @param {object} item.syncParams 同步参数对象
+     * @return {string} 完整请求关键词字符串
      */
     _getQueryKeyStr ({ prefix, syncParams }) {
         return this.storageKeyPrefix + (
@@ -458,14 +475,14 @@ class TuaStorage {
      * 1.如果参数中传了 cacheData，且数据未过期则返回缓存数据（可能来自 cache 或者 storage）
      * 2.如果没有缓存数据或已过期，同时也没有对应的同步数据的方法，那么抛出错误
      * 3.调用同步数据方法
-     * @param {Object} item
-     * @param {String} item.key 前缀
-     * @param {Function} item.syncFn 同步数据的方法
-     * @param {Number} item.expires 超时时间（单位：秒）
-     * @param {Object} item.cacheData 缓存数据
-     * @param {Object} item.syncParams 同步参数对象
-     * @param {Object} item.syncOptions 同步函数配置
-     * @param {Boolean} item.isAutoSave 是否自动保存
+     * @param {object} item
+     * @param {string} item.key 前缀
+     * @param {function} [item.syncFn] 同步数据的方法
+     * @param {number} [item.expires] 超时时间（单位：秒）
+     * @param {object} [item.cacheData] 缓存数据
+     * @param {object} [item.syncParams] 同步参数对象
+     * @param {object} [item.syncOptions = []] 同步函数配置
+     * @param {boolean} [item.isAutoSave = true] 是否自动保存
      * @return {Promise}
      */
     _loadData ({
@@ -554,9 +571,9 @@ class TuaStorage {
 
     /**
      * 判断数据是否已过期
-     * @param {Object} param
-     * @param {Number} param.expires 数据的到期时间
-     * @return {Boolean}
+     * @param {object} param
+     * @param {number} [param.expires = this.neverExpireMark] 数据的到期时间
+     * @return {boolean}
      */
     _isDataExpired (param) {
         // 不处理数据结构不匹配的数据
@@ -567,13 +584,13 @@ class TuaStorage {
         return this._isNeverExpired(expires)
             // 永不超时
             ? false
-            : +expires < parseInt(Date.now() / 1000)
+            : +expires < Math.floor(Date.now() / 1000)
     }
 
     /**
      * 判断是否永不超时
-     * @param {Number} expires
-     * @return {Boolean}
+     * @param {number} expires
+     * @return {boolean}
      */
     _isNeverExpired (expires) {
         return expires === this.neverExpireMark

@@ -1,3 +1,5 @@
+// @ts-check
+
 export default class Wx {
     constructor () {
         this.store = {}

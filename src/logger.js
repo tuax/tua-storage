@@ -1,7 +1,8 @@
+// @ts-check
+
 /**
  * 统一的日志输出函数，在测试环境时不输出
- * @param {String} type 输出类型 log|warn|error
- * @param {any} out 具体的输出内容
+ * @param {string} type 输出类型 log|warn|error
  */
 const logByType = (type) => (...out) => {
     const env = process.env.NODE_ENV
