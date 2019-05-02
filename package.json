@@ -6,6 +6,7 @@
     "module": "dist/TuaStorage.esm.js",
     "unpkg": "dist/TuaStorage.umd.js",
     "jsdelivr": "dist/TuaStorage.umd.js",
+    "typings": "src/index.d.ts",
     "files": [
         "src/",
         "dist/"
