@@ -50,26 +50,29 @@ export interface RemoveParams {
     prefix: string
 }
 
-/**
- * https://tuateam.github.io/tua-storage/config-methods/default.html
- */
-export interface TuaStorageClass {
-    new (args?: {
-        whiteList?: string[],
-        syncFnMap?: object,
-        autoClearTime?: number,
-        storageEngine?: null | object,
-        defaultExpires?: number,
-        neverExpireMark?: null | string,
-        storageKeyPrefix?: string,
-        isEnableAutoClear?: boolean,
-    }): TuaStorageInstance
-    install: PluginFunction<never>
+export interface TuaStorageOptions {
+    whiteList?: string[],
+    syncFnMap?: object,
+    autoClearTime?: number,
+    storageEngine?: null | object,
+    defaultExpires?: number,
+    neverExpireMark?: null | string,
+    storageKeyPrefix?: string,
+    isEnableAutoClear?: boolean,
 }
 
-/**
- * https://tuateam.github.io/tua-storage/config-methods/methods.html
- */
+export interface TuaStorageClass {
+    /**
+     * https://tuateam.github.io/tua-storage/config-methods/default.html
+     */
+    new (args?: TuaStorageOptions): TuaStorageInstance
+
+    /**
+     * https://tuateam.github.io/tua-storage/config-methods/default.html
+     */
+    install: PluginFunction<TuaStorageOptions>
+}
+
 export interface TuaStorageInstance {
     // public
     save: <T = any>(item: SaveParamsType | SaveParamsType[]) => Promise<T>
@@ -92,3 +95,14 @@ export interface TuaStorageInstance {
 
 declare const TuaStorage: TuaStorageClass
 export default TuaStorage
+
+/* -- vue plugin -- */
+
+declare module 'vue/types/vue' {
+    interface Vue {
+        /**
+         * https://tuateam.github.io/tua-storage/config-methods/methods.html
+         */
+        $tuaStorage: TuaStorageInstance
+    }
+}
