@@ -1,3 +1,5 @@
+// @ts-check
+
 import TuaStorage from '@/index'
 import { DEFAULT_KEY_PREFIX } from '@/constants'
 import {

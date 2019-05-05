@@ -1,3 +1,5 @@
+// @ts-check
+
 import { negate, jsonParse, getParamStrFromObj } from '@/utils'
 
 test('negate', () => {
@@ -14,6 +16,7 @@ test('jsonParse', () => {
     const obj = { steve: 'young' }
     const str = JSON.stringify(obj)
 
+    // @ts-ignore
     expect(jsonParse()).toBe(undefined)
     expect(jsonParse(null)).toBe(null)
     expect(jsonParse(undefined)).toBe(undefined)

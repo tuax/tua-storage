@@ -1,3 +1,5 @@
+// @ts-check
+
 import { logger } from '../utils'
 import { ERROR_MSGS } from '../constants'
 

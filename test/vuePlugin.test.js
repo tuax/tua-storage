@@ -1,3 +1,5 @@
+// @ts-check
+
 import { createLocalVue } from '@vue/test-utils'
 
 import TuaStorage from '@/index'

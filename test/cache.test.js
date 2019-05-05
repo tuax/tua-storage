@@ -1,3 +1,5 @@
+// @ts-check
+
 import TuaStorage from '@/index'
 import { ERROR_MSGS, DEFAULT_EXPIRES } from '@/constants'
 import {
@@ -130,8 +132,11 @@ describe('error handling', () => {
     })
 
     test('save/load/remove one item without key or fullKey', () => {
+        // @ts-ignore
         expect(tuaStorage.save()).rejects.toEqual(Error(ERROR_MSGS.key))
+        // @ts-ignore
         expect(tuaStorage.load({})).rejects.toEqual(Error(ERROR_MSGS.key))
+        // @ts-ignore
         expect(tuaStorage.remove()).rejects.toEqual(Error(ERROR_MSGS.key))
     })
 
@@ -148,6 +153,7 @@ describe('error handling', () => {
     })
 
     test('syncFn does not return a promise', () => {
+        // @ts-ignore
         const promise = tuaStorage.load({
             key,
             data: '1217',
@@ -179,6 +185,7 @@ describe('async methods', () => {
             test('should pass syncOptions', async () => {
                 const syncOptions = 'syncOptions'
                 const params = { key, syncFn, syncOptions }
+                // @ts-ignore
                 const { data } = await tuaStorage.load(params)
 
                 expect(data.length).toBe(2)
@@ -275,6 +282,7 @@ describe('async methods', () => {
 
             expect(stringify(cache[fullKey])).toBe(expectedVal)
 
+            // @ts-ignore
             await tuaStorage.remove({ fullKey })
 
             expect(cache[fullKey]).toBeUndefined()
@@ -284,11 +292,11 @@ describe('async methods', () => {
 
         test('save and remove all exist items', async () => {
             const kdArr = [
-                { key: 'brmm-1', data: 'string' },
-                { key: 'brmm-2', data: 1217 },
-                { key: 'brmm-3', data: null },
-                { key: 'brmm-4', data: undefined },
-                { key: 'brmm-5', data: { yo: 1, hey: { 876: 123 } } },
+                { key: 'whatever-1', data: 'string' },
+                { key: 'whatever-2', data: 1217 },
+                { key: 'whatever-3', data: null },
+                { key: 'whatever-4', data: undefined },
+                { key: 'whatever-5', data: { yo: 1, hey: { 876: 123 } } },
             ]
             const keyArr = kdArr.map(({ key }) => key)
 

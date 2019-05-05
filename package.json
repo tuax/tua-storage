@@ -1,11 +1,12 @@
 {
     "name": "tua-storage",
-    "version": "1.7.1",
+    "version": "1.7.2",
     "description": "🏗 A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
     "main": "dist/TuaStorage.cjs.js",
     "module": "dist/TuaStorage.esm.js",
     "unpkg": "dist/TuaStorage.umd.js",
     "jsdelivr": "dist/TuaStorage.umd.js",
+    "typings": "src/index.d.ts",
     "files": [
         "src/",
         "dist/"
@@ -51,7 +52,8 @@
         },
         "collectCoverage": true,
         "collectCoverageFrom": [
-            "src/**"
+            "src/**",
+            "!src/index.d.ts"
         ],
         "setupFiles": [
             "jest-localstorage-mock"
@@ -76,6 +78,7 @@
         "@babel/preset-env": "^7.3.1",
         "@commitlint/cli": "^7.5.2",
         "@commitlint/config-conventional": "^7.5.0",
+        "@types/jest": "^24.0.12",
         "@vue/test-utils": "^1.0.0-beta.29",
         "babel-core": "^7.0.0-bridge.0",
         "babel-eslint": "^10.0.1",
@@ -101,6 +104,7 @@
         "rollup-plugin-json": "^3.1.0",
         "rollup-plugin-replace": "^2.1.0",
         "rollup-plugin-uglify": "^6.0.2",
+        "typescript": "^3.4.5",
         "vuepress": "^1.0.0-alpha.39"
     },
     "keywords": [

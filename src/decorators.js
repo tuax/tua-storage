@@ -1,3 +1,5 @@
+// @ts-check
+
 import { ERROR_MSGS } from './constants'
 
 /**
@@ -53,7 +55,7 @@ const getFullKey = getDecorator((method) =>
 /**
  * 让函数支持数组参数的装饰器
  */
-const supportArrayParam = (isAsync = true) => getDecorator((method) =>
+const supportArrayParams = (isAsync) => getDecorator((method) =>
     /**
      * 参数是数组，则使用 Promise.all 并发调用原函数
      */
@@ -65,6 +67,8 @@ const supportArrayParam = (isAsync = true) => getDecorator((method) =>
         return isAsync ? Promise.all(mapResult) : mapResult
     }
 )
+const syncArrayParams = supportArrayParams(false)
+const asyncArrayParams = supportArrayParams(true)
 
 /**
  * 保存数据时获取将被保存的数据
@@ -85,7 +89,7 @@ const getDataToSave = getDecorator((method) =>
         const realExpires = isNeverExpired
             // 永不超时
             ? this.neverExpireMark
-            : parseInt(Date.now() / 1000) + expires
+            : Math.floor(Date.now() / 1000) + expires
         const dataToSave = { rawData, expires: realExpires }
 
         return method.call(this, { ...rest, dataToSave })
@@ -96,5 +100,6 @@ export {
     checkKey,
     getFullKey,
     getDataToSave,
-    supportArrayParam,
+    syncArrayParams,
+    asyncArrayParams,
 }

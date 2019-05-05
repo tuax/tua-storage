@@ -1,3 +1,5 @@
+// @ts-check
+
 import AsyncStorageCls from 'mock-async-storage'
 
 import TuaStorage from '@/index'
@@ -190,7 +192,8 @@ describe('error handling', () => {
         expect(() => tuaStorage.clearSync()).toThrow(Error(ERROR_MSGS.syncMethod))
         expect(() => tuaStorage.saveSync({ key, data })).toThrow(Error(ERROR_MSGS.syncMethod))
         expect(() => tuaStorage.loadSync({ key })).toThrow(Error(ERROR_MSGS.syncMethod))
+        // @ts-ignore
         expect(() => tuaStorage.removeSync({ key })).toThrow(Error(ERROR_MSGS.syncMethod))
-        expect(() => tuaStorage.getInfoSync({ key })).toThrow(Error(ERROR_MSGS.syncMethod))
+        expect(() => tuaStorage.getInfoSync()).toThrow(Error(ERROR_MSGS.syncMethod))
     })
 })

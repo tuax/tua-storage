@@ -1,10 +1,12 @@
+// @ts-check
+
 import json from 'rollup-plugin-json'
 import babel from 'rollup-plugin-babel'
 import replace from 'rollup-plugin-replace'
 import { eslint } from 'rollup-plugin-eslint'
 import { uglify } from 'rollup-plugin-uglify'
 
-import pkg from './package.json'
+import * as pkg from './package.json'
 
 const input = `src/index.js`
 const banner = `/* ${pkg.name} version ${pkg.version} */`
