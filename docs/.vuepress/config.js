@@ -31,8 +31,9 @@ module.exports = {
             {
                 text: '🔥生态系统',
                 items: [
-                    { text: '🏗api 生成工具', link: 'https://tuateam.github.io/tua-api/' },
+                    { text: '🏗API 生成工具', link: 'https://tuateam.github.io/tua-api/' },
                     { text: '🖖小程序框架', link: 'https://tuateam.github.io/tua-mp/' },
+                    { text: '🔐轻松解决滚动穿透', link: 'https://tuateam.github.io/tua-body-scroll-lock/' },
                 ],
             },
         ],
