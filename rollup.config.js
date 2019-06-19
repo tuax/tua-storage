@@ -4,60 +4,88 @@ import json from 'rollup-plugin-json'
 import babel from 'rollup-plugin-babel'
 import replace from 'rollup-plugin-replace'
 import { eslint } from 'rollup-plugin-eslint'
-import { uglify } from 'rollup-plugin-uglify'
+import { terser } from 'rollup-plugin-terser'
 
-import * as pkg from './package.json'
+import { DEFAULT_EXTENSIONS } from '@babel/core'
 
-const input = `src/index.js`
-const banner = `/* ${pkg.name} version ${pkg.version} */`
+const pkg = require('./package.json')
 
-const output = {
+const banner =
+`/**
+ * ${pkg.name} v${pkg.version}
+ * (c) ${new Date().getFullYear()} ${pkg.author}
+ * @license ${pkg.license}
+ */
+`
+
+const extensions = [...DEFAULT_EXTENSIONS, 'ts', 'tsx']
+const configMap = {
     cjs: {
         file: pkg.main,
-        banner,
         format: 'cjs',
         exports: 'named',
     },
     esm: {
         file: pkg.module,
-        banner,
         format: 'esm',
     },
-    umd: {
-        file: pkg.unpkg,
-        name: 'TuaStorage',
-        banner,
+    umdDev: {
+        file: pkg.main,
         format: 'umd',
-        exports: 'named',
+        env: 'development',
+    },
+    umdProd: {
+        file: `dist/tua-storage.umd.min.js`,
+        format: 'umd',
+        env: 'production',
+    },
+    esmBrowserDev: {
+        env: 'development',
+        file: 'dist/tua-storage.esm.browser.js',
+        format: 'esm',
+    },
+    esmBrowserProd: {
+        env: 'production',
+        file: 'dist/tua-storage.esm.browser.min.js',
+        format: 'esm',
     },
 }
-const plugins = [
-    eslint(),
-    json(),
-    babel(),
-]
-const env = 'process.env.NODE_ENV'
 
-export default [{
-    input,
-    output: [ output.cjs, output.esm ],
-    plugins,
-}, {
-    input,
-    output: output.umd,
-    plugins: [
-        ...plugins,
-        replace({ [env]: '"development"' }),
-    ],
-}, {
-    input,
-    output: {
-        ...output.umd,
-        file: 'dist/TuaStorage.umd.min.js',
-    },
-    plugins: [
-        ...plugins,
-        replace({ [env]: '"production"' }),
-        uglify(),
-    ],
-}]
+const genConfig = (opts) => {
+    const isProd = /min\.js$/.test(opts.file)
+
+    const config = {
+        input: 'src/index.js',
+        plugins: [eslint({ include: '**/*.js' }), json()],
+        output: {
+            file: opts.file,
+            name: 'TuaStorage',
+            banner,
+            format: opts.format,
+        },
+    }
+
+    if (opts.env) {
+        config.plugins.push(replace({
+            'process.env.NODE_ENV': JSON.stringify(opts.env),
+        }))
+    }
+    if (opts.transpile !== false) {
+        config.plugins.push(babel({ extensions }))
+    }
+
+    if (isProd) {
+        config.plugins.push(terser({
+            output: {
+                /* eslint-disable */
+                ascii_only: true,
+            },
+        }))
+    }
+
+    return config
+}
+
+export default Object.keys(configMap)
+    .map(key => configMap[key])
+    .map(genConfig)

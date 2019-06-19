@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "allowJs": true,
+        "checkJs": true,
         "baseUrl": ".",
         "target": "es5",
         "resolveJsonModule": true,
