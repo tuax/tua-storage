@@ -183,9 +183,7 @@ describe('error handling', () => {
         invalidAsyncStorage.setItem = () => {
             throw Error('invalid SE')
         }
-        const fn = () => new TuaStorage({ storageEngine: invalidAsyncStorage })
-
-        expect(fn).toThrowError('invalid SE')
+        new TuaStorage({ storageEngine: invalidAsyncStorage })
     })
 
     test('throw error when invoke sync methods', () => {
