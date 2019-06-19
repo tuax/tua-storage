@@ -430,13 +430,20 @@ class TuaStorage {
             return defaultSEMap
         }
 
-        const promiseTest = this.SE.setItem('test', 'test')
-        this.SE.removeItem('test')
-        const isPromise = !!(promiseTest && promiseTest.then)
+        try {
+            const testKey = `__TUA_STORAGE_TEST__`
+            const promiseTest = this.SE.setItem(testKey, 'test')
+            const isPromise = !!(promiseTest && promiseTest.then)
+            this.SE.removeItem(testKey)
 
-        return isPromise
-            ? formatMethodsByAS.call(this)
-            : formatMethodsByLS.call(this)
+            return isPromise
+                ? formatMethodsByAS.call(this)
+                : formatMethodsByLS.call(this)
+        } catch (error) {
+            logger.error(error)
+
+            return defaultSEMap
+        }
     }
 
     /**
