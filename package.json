@@ -1,11 +1,11 @@
 {
     "name": "tua-storage",
-    "version": "1.7.3",
+    "version": "1.8.0",
     "description": "🏗 A common storage for web(localStorage), for RN(AsyncStorage), for mini-program(wx) or just memory cache(Node.js)",
-    "main": "dist/TuaStorage.cjs.js",
-    "module": "dist/TuaStorage.esm.js",
-    "unpkg": "dist/TuaStorage.umd.js",
-    "jsdelivr": "dist/TuaStorage.umd.js",
+    "main": "dist/tua-storage.cjs.js",
+    "module": "dist/tua-storage.esm.js",
+    "unpkg": "dist/tua-storage.umd.js",
+    "jsdelivr": "dist/tua-storage.umd.js",
     "typings": "src/index.d.ts",
     "files": [
         "src/",
@@ -103,7 +103,7 @@
         "rollup-plugin-eslint": "^6.0.0",
         "rollup-plugin-json": "^4.0.0",
         "rollup-plugin-replace": "^2.2.0",
-        "rollup-plugin-uglify": "^6.0.2",
+        "rollup-plugin-terser": "^5.0.0",
         "typescript": "^3.5.2",
         "vuepress": "^1.0.1"
     },
