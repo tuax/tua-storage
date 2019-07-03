@@ -361,10 +361,7 @@ class TuaStorage {
             ? this._loadData({ key, cacheData, ...rest })
             // 读取 storage
             : this.SEMethods._getItem(key)
-                // 如果有缓存则返回 cacheData
                 .then(cacheData => this._loadData({ key, cacheData, ...rest }))
-                // 没有缓存则不传 cacheData，执行同步数据逻辑（请求接口等）
-                .catch(() => this._loadData({ key, ...rest }))
     }
 
     /**
@@ -373,15 +370,16 @@ class TuaStorage {
      */
     _getSEMethods () {
         const noop = () => {}
+        const emptyPRes = () => pRes()
         const _getInfoSync = () => ({ keys: this._getAllCacheKeys() })
 
         const defaultSEMap = {
-            _clear: pRes,
-            _setItem: pRes,
-            _getItem: pRes,
+            _clear: emptyPRes,
+            _setItem: emptyPRes,
+            _getItem: emptyPRes,
             _getInfo: () => pRes(_getInfoSync()),
             _getAllKeys: () => pRes([]),
-            _removeItem: pRes,
+            _removeItem: emptyPRes,
 
             _clearSync: noop,
             _getInfoSync,
