@@ -22,10 +22,8 @@ const tuaStorage = new TuaStorage({
 
 const key = 'common key'
 const data = 'common data'
-// const fullKey = 'common fullKey'
 const syncParams = { a: 1, b: '2' }
-
-// const targetKey = getTargetKey(key, syncParams)
+const syncFn = () => Promise.resolve(data)
 
 let cache = tuaStorage._cache
 let store = wx.store
@@ -217,6 +215,12 @@ describe('sync methods', () => {
         wx._clear()
         cache = tuaStorage._cache = {}
         store = wx.store
+    })
+
+    test(`load inexistent items with syncFn`, async () => {
+        const loadedData = await tuaStorage.load({ key, syncFn })
+
+        expect(loadedData.data).toEqual(data)
     })
 
     test('never save data which is destined to expired', () => {
