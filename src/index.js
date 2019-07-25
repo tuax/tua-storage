@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @file: 对外暴露以下方法：
  *   1.构造函数：用于初始化 TuaStorage
@@ -104,7 +102,7 @@ class TuaStorage {
      * @param {string} [item.fullKey] 完整关键词
      * @param {object} [item.syncParams] 同步参数对象
      * @param {boolean} [item.isEnableCache = true] 是否使用内存缓存
-     * @param {object} [item.dataToSave] 由 `@getDataToSave` 生成
+     * @param {object} [item.dataToSave]
      * @param {any} item.dataToSave.rawData 待保存数据
      * @param {number} item.dataToSave.expires 超时时间（单位：秒）
      * @return {Promise}
@@ -134,7 +132,7 @@ class TuaStorage {
      * @param {string} item.fullKey 完整关键词
      * @param {object} item.syncParams 同步参数对象
      * @param {boolean} [item.isEnableCache = true] 是否使用内存缓存
-     * @param {object} [item.dataToSave] 由 `@getDataToSave` 生成
+     * @param {object} [item.dataToSave]
      * @param {any} item.dataToSave.rawData 待保存数据
      * @param {number} item.dataToSave.expires 超时时间（单位：秒）
      */
@@ -361,6 +359,8 @@ class TuaStorage {
             ? this._loadData({ key, cacheData, ...rest })
             // 读取 storage
             : this.SEMethods._getItem(key)
+                // 小程序端找不到数据会进入 catch
+                .catch(() => null)
                 .then(cacheData => this._loadData({ key, cacheData, ...rest }))
     }
 
