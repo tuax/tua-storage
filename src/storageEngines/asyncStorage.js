@@ -1,6 +1,6 @@
 // @ts-check
 
-import { logger } from '../utils'
+import { logger, stringify } from '../utils'
 import { ERROR_MSGS } from '../constants'
 
 /**
@@ -28,7 +28,7 @@ export default function formatMethodsByAS () {
             .catch(logger.error)
     )
     const _getItem = bindFnToSE(getItem)
-    const _setItem = bindFnToSE(setItem)
+    const _setItem = (key, data) => bindFnToSE(setItem)(key, stringify(data))
     const _getAllKeys = bindFnToSE(getAllKeys)
     const _removeItem = bindFnToSE(removeItem)
     const _getInfo = () => _getAllKeys().then(keys => ({ keys }))

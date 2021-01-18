@@ -139,7 +139,7 @@ describe('async methods', () => {
 
         // storage
         expect(store.size).toBe(1)
-        expect(stringify(store.get(targetKey))).toBe(expectedVal)
+        expect(store.get(targetKey)).toBe(expectedVal)
     })
 
     test('remove some undefined items', async () => {
@@ -157,7 +157,7 @@ describe('async methods', () => {
 
         // storage
         expect(store.size).toBe(1)
-        expect(stringify(store.get(targetKey))).toBe(expectedVal)
+        expect(store.get(targetKey)).toBe(expectedVal)
     })
 
     test('get storage info', async () => {
