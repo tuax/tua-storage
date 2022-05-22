@@ -3,7 +3,7 @@
 <h4 align="center">让我们构建大一统的缓存层~</h4>
 
 <p align="center">
-    <a href="https://tuateam.github.io/tua-storage/">👉完整文档地址点这里👈</a>
+    <a href="https://tuax.github.io/tua-storage/">👉完整文档地址点这里👈</a>
 </p>
 
 <p align="center">
